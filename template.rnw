@@ -1,0 +1,175 @@
+\documentclass[12pt, titlepage]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[ngerman]{babel}
+
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+\usepackage[a4paper,left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
+
+\title{Informatik für Ökonomen I\\ Auswertungsbericht}
+\author{automatisch generiert durch \textit{inf4oec}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.1pt}
+\renewcommand{\footrulewidth}{0.1pt}
+\fancyhead[L]{\small Informatik für Ökonomen I - Auswertungsbericht}
+\fancyhead[R]{\small \thepage}
+\fancyfoot[L]{\small automatisch generiert durch \textit{inf4oec}}
+\fancyfoot[R]{\small VERTRAULICH}
+
+\begin{document}
+
+\maketitle
+
+\section{Daten}
+\subsection{Datei}
+Die Rohdaten wurden aus der Datei\textit{
+<<echo=FALSE, results="asis">>=
+cat(input$inputFile$name)
+@
+}eingelesen.
+\subsection{Allgemeines}
+Die Prüfung umfasste
+<<echo=FALSE, results="asis">>=
+cat(numberOfItems())
+@
+Items. Es waren
+<<echo=FALSE, results="asis">>=
+cat(numberOfStudents())
+@
+Studierende für die Prüfung angemeldet,
+<<echo=FALSE, results="asis">>=
+if (numberOfInvalidExams() == 0) {
+  cat("wobei keine Person 0 Punkte erzielt hat.")
+} else {
+  cat("wovon ", numberOfInvalidExams(), " die Prüfung nicht angetreten, leer abgegeben oder keine Punkte erzielt haben.")
+}
+@
+
+<<echo=FALSE, results="asis">>=
+if (length(outItems()) > 0) {
+  cat("Ursprünglich konnten maximal ", maxPointsValidatedSum(), " Punkte erzielt werden. Nach der Itemanalyse waren noch ", maxPointsDefSum(), " Punkte möglich.")
+} else {
+  cat("Es konnten maximal ", maxPointsValidatedSum(), " Punkte erzielt werden.")
+}
+@
+
+\section{Itemanalyse}
+\subsection{Rohwertverteilung}
+Die Rohwertverteilung der erzielten Punkte wird im Folgenden durch zwei grafische Darstellungen veranschaulicht. Abhängig von Ihrer Entscheidung während der Auswertung werden die
+<<echo=FALSE, results="asis">>=
+cat(numberOfInvalidExams())
+@
+leeren Prüfungen dargestellt oder nicht.
+\begin{figure}[H]
+<<figure1, echo=FALSE, out.width="\\textwidth", fig.height=5.5>>=
+h <- hist(rowSums(itemData()), main="Verteilung der Punkte", xlab="Anzahl Punkte", ylab="Häufigkeit", col = "lightblue", breaks = maxPointsValidatedSum()/5, xlim=c(0, maxPointsValidatedSum()), xaxt='n')
+axis(1, at=seq(0, maxPointsValidatedSum(), 5), cex.axis=0.8)
+xfit <- seq(0, maxPointsValidatedSum(), length=maxPointsValidatedSum())
+yfit <- dnorm(xfit, mean=mean(rowSums(itemData())), sd=sd(rowSums(itemData())))
+yfit <- yfit*diff(h$mids[1:2])*length(rowSums(itemData()))
+lines(xfit, yfit)
+abline(v = mean(rowSums(itemData())), col = "blue", lwd = 1)
+abline(v = median(rowSums(itemData())), col = "orange", lwd = 1)
+legend("topright", legend = c("Mittelwert", "Median"), col = c("blue", "orange"), lwd=1)
+@
+\caption{Histogramm der Rohwerte}
+\end{figure}
+\begin{figure}[H]
+<<figure2, echo=FALSE, out.width="\\textwidth", fig.height=4>>=
+qqnorm(rowSums(itemData()), main="Normaler Q-Q-Plot", xlab="Erwartete Quantile", ylab="Beobachtete Quantile")
+qqline(rowSums(itemData()), col=2)
+@
+\caption{Quantil-Quantil-Plot: Rohwertverteilung gegen Normalverteilung}
+\end{figure}
+
+\subsection{Itemkennwerte}
+Als Itemkennwerte wurden Schwierigkeit und Trennschärfe herangezogen.
+<<echo=FALSE, results="asis">>=
+if (length(outItems()) == 0) {
+  cat("Für die Notengebung wurden keine Items ausgeschlossen.")
+} else if (length(outItems()) == 1) {
+  cat("Für die Notengebung wurde Item ", outItems(), " ausgeschlossen.")
+} else if (length(outItems()) > 1) {
+  cat("Für die Notengebung wurden die Items ")
+  for (i in 1:length(outItems()))
+  {
+    cat(outItems()[i])
+    if (length(outItems()) - i > 1) {
+      cat(", ")
+    } else if (length(outItems()) - i == 1) {
+      cat(" und ")
+    }
+  }
+  cat(" ausgeschlossen.")
+}
+@
+<<echo=FALSE, results="asis", comment=NA>>=
+table <- cbind(seq(1:numberOfItems()), itemStats())
+colnames(table) <- c("Itemnummer", "Schwierigkeit", "Trennschärfe")
+table <- xtable(table, caption="Die Itemkennwerte", digits=c(0,0,2,2), align="llrr")
+print(table, include.rownames = FALSE, floating = FALSE, tabular.environment = "longtable")
+@
+
+\section{Notengebung}
+Es wurde festgelegt, dass die Note 4 mit einer Mindestpunktzahl von
+<<echo=FALSE, results="asis">>=
+cat(input$points4)
+@
+erreicht werden kann. Für die Note 6 wurden
+<<echo=FALSE, results="asis">>=
+cat(input$points6)
+@
+Punkte benötigt.
+
+Von den
+<<echo=FALSE, results="asis">>=
+cat(numberOfValidExams())
+@
+Studierenden, welche mehr als 0 Punkte erzielten, haben
+<<echo=FALSE, results="asis">>=
+cat(numberOfPassed())
+@
+die Prüfung bestanden. Das entspricht einem Anteil von
+<<echo=FALSE, results="asis">>=
+cat(round(percentPassed() * 100, 2))
+@
+\%.
+<<echo=FALSE, results="asis">>=
+cat(numberOfValidExams() - numberOfPassed())
+@
+Personen
+<<echo=FALSE, results="asis">>=
+cat(paste0("(", round((1 - percentPassed()) * 100, 2)))
+@
+\%) haben die Prüfung nicht bestanden.
+Der Notendurchschnitt beträgt
+<<echo=FALSE, results="asis">>=
+cat(paste0(round(gradesMean(), 2), "."))
+@
+\begin{figure}[H]
+<<figure3, echo=FALSE, out.width="\\textwidth", fig.height=5>>=
+curve(slope() * x + intercept(), 0, maxPointsDefSum(), xlim=c(0, maxPointsDefSum()), ylim=c(1, 6), type="n", xlab="Anzahl Punkte", ylab="Note", main="Funktion der Notengebung")
+polygon(c(0, 0, input$points4, input$points4), c(1, intercept(), 3.785, 1), col="red", border=FALSE)
+polygon(c(input$points4, input$points4, maxPointsDefSum(), maxPointsDefSum()), c(1, 3.785, slope() * maxPointsDefSum() + intercept(), 1), col="green", border=FALSE)
+@
+\caption{Die lineare Funktion der Notengebung}
+\end{figure}
+
+\begin{figure}[H]
+<<figure4, echo=FALSE, out.width="\\textwidth">>=
+h <- hist(grades()[ , 3], breaks=seq(0.875,6.125,0.25), border=FALSE, main="Verteilung der Noten", xlab="Note", ylab="Häufigkeit", labels=TRUE)
+c = ifelse(h$mids < 4, "red", "green")
+plot(h, xlim=c(0.75,6.25), ylim=c(0,modalWert()+10), col=c, border="white", add = TRUE)
+@
+\caption{Histogramm der Noten}
+\end{figure}
+
+\end{document}
