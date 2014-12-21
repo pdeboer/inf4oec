@@ -566,27 +566,34 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  # OUTPUT: the download handler for the grades table (.csv)
-  output$csv <- downloadHandler (
-    filename = "Notentabelle.csv",
-    content = function(file)
+  observe ({
+    if (!is.null(grades()))
     {
-      write.csv(grades(), file, row.names = FALSE)
+      
+      # OUTPUT: the download handler for the grades table (.csv)
+      output$csv <- downloadHandler (
+        filename = "Notentabelle.csv",
+        content = function(file)
+        {
+          write.csv(grades(), file, row.names = FALSE)
+        }
+      )
+      
+      # OUTPUT: the download handler for the report (.pdf)
+      output$report = downloadHandler (
+        filename = "Auswertungsbericht.pdf",
+        content = function(file)
+        {
+          out = knit2pdf('template.rnw', clean = TRUE)
+          file.rename(out, file) # move pdf to file for downloading
+          file.remove("template.tex")
+          file.remove("figure/figure1-1.pdf", "figure/figure2-1.pdf", "figure/figure3-1.pdf", "figure/figure4-1.pdf")
+          file.remove("figure")
+        },
+        contentType = 'application/pdf'
+      )
+      
     }
-  )
-  
-  # OUTPUT: the download handler for the report (.pdf)
-  output$report = downloadHandler (
-    filename = "Auswertungsbericht.pdf",
-    content = function(file)
-    {
-      out = knit2pdf('template.rnw', clean = TRUE)
-      file.rename(out, file) # move pdf to file for downloading
-      file.remove("template.tex")
-      file.remove("figure/figure1-1.pdf", "figure/figure2-1.pdf", "figure/figure3-1.pdf", "figure/figure4-1.pdf")
-      file.remove("figure")
-    },
-    contentType = 'application/pdf'
-  )
+  })
   
 })
