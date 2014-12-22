@@ -68,7 +68,7 @@ shinyServer(function(input, output, session) {
   rawData <- reactive ({
     if (!is.null(input$inputFile))
     {
-      read.csv(input$inputFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
+      read.csv(input$inputFile$datapath, header=input$header, sep=input$sep, quote=input$quote, encoding="UTF-8")
     }
   })
   
@@ -575,7 +575,7 @@ shinyServer(function(input, output, session) {
         filename = "Notentabelle.csv",
         content = function(file)
         {
-          write.csv(grades(), file, row.names = FALSE)
+          write.csv(grades(), file, row.names = FALSE, encoding="UTF-8")
         }
       )
       
@@ -584,7 +584,7 @@ shinyServer(function(input, output, session) {
         filename = "Auswertungsbericht.pdf",
         content = function(file)
         {
-          out = knit2pdf('template.rnw', clean = TRUE)
+          out = knit2pdf('template.rnw', clean = TRUE, encoding="UTF-8")
           file.rename(out, file) # move pdf to file for downloading
           file.remove("template.tex")
           file.remove("figure/figure1-1.pdf", "figure/figure2-1.pdf", "figure/figure3-1.pdf", "figure/figure4-1.pdf")
