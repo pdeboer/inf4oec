@@ -575,7 +575,7 @@ shinyServer(function(input, output, session) {
         filename = "Notentabelle.csv",
         content = function(file)
         {
-          write.csv(grades(), file, row.names = FALSE, encoding="UTF-8")
+          write.csv(grades(), file, row.names = FALSE, fileEncoding="UTF-8")
         }
       )
       
