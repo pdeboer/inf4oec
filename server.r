@@ -84,7 +84,11 @@ shinyServer(function(input, output, session) {
   allData <- reactive ({
     if (!is.null(rawData()))
     {
-      dcast(rawData(), eval(parse(text = colnames(rawData())[1])) ~ eval(parse(text = colnames(rawData())[3])), value.var = colnames(rawData())[ncol(rawData())])
+      temp <- dcast(rawData(), eval(parse(text = colnames(rawData())[1])) ~ eval(parse(text = colnames(rawData())[3])), value.var = colnames(rawData())[ncol(rawData())])
+      if (ncol(temp) > 2)
+      {
+        temp
+      }
     }
   })
   
@@ -251,7 +255,16 @@ shinyServer(function(input, output, session) {
   itemCutoffDefault <- reactive ({
     if (!is.null(itemStats()))
     {
-      itemStats()[order(itemStats()[ , 2]), ][2, 2] + 0.01
+      temp <- itemStats()[order(itemStats()[ , 2]), ][2, 2] + 0.01
+      if (temp > 1)
+      {
+        temp <- 1
+      }
+      else if (temp < -1)
+      {
+        temp <- -1
+      }
+      temp
     }
   })
   
@@ -293,7 +306,7 @@ shinyServer(function(input, output, session) {
   # observe the itemCutoffInput and update item checkboxes accordingly (on value change)
   observe ({
     input$itemCutoffInput
-    if (!is.null(numberOfItems()) && !is.null(itemStats()) && !is.null(input$itemCutoffInput))
+    if (!is.null(numberOfItems()) && !is.null(itemStats()) && !is.null(input$itemCutoffInput) && !is.na(input$itemCutoffInput))
     {
       for (i in 1:numberOfItems())
       {

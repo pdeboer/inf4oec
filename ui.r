@@ -22,7 +22,7 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
           column(12,
             h1("Schritt 1: Daten einlesen", style = "color: lightblue"),
             p('Wählen Sie eine CSV-Datei mit den Spalten "Matrikelnummer", "Serie", "Fragennummer", Alternativen ("A", "B", "C" etc.) und "Punkte" aus.'),
-            p("Prüfen Sie, ob die Datei korrekt eingelesen wurde. Passen Sie anderenfalls die Einstellungen in der Seitenleiste links an."),
+            p("Prüfen Sie, ob die Datei korrekt eingelesen wurde. Passen Sie anderenfalls die Einstellungen in der Seitenleiste links an.", tags$br(), "Bitte beachten Sie, dass die Daten nach diesem Schritt nur weiterverarbeitet werden, wenn die Anzahl Fragen > 1 ist."),
             tags$hr()
           )
         ),
