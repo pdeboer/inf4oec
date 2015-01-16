@@ -30,11 +30,13 @@
 
 \section{Daten}
 \subsection{Datei}
-Die Rohdaten wurden aus der Datei\textit{
+Dateiname der eingelesenen Rohdaten:
+
+\textit{
 <<echo=FALSE, results="asis">>=
-cat(input$inputFile$name)
+cat(stresc(input$inputFile$name))
 @
-}eingelesen.
+}
 \subsection{Allgemeines}
 Die Prüfung umfasste
 <<echo=FALSE, results="asis">>=

@@ -2,6 +2,7 @@ library(shiny)
 library(reshape2)
 library(knitr)
 library(xtable)
+library(seqinr)
 
 # returns the slope of a linear function
 calculateSlope <- function (x1, y1, x2, y2)
