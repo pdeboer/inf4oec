@@ -2,7 +2,7 @@ library(shiny)
 library(reshape2)
 library(knitr)
 library(xtable)
-library(seqinr)
+library(seqinr) #used in knitr template
 
 # returns the slope of a linear function
 calculateSlope <- function (x1, y1, x2, y2)
@@ -171,7 +171,7 @@ shinyServer(function(input, output, session) {
       numericInputs <- list()
       for (i in 1:numberOfItems())
       {
-        numericInputs[[i]] <- numericInput(inputId = paste("max", i), label = paste("Frage", i), value = maxPointsGuessVec()[[i]], min=-1, max=90, step=1)
+        numericInputs[[i]] <- numericInput(inputId = paste0("max", i), label = paste("Frage", i), value = maxPointsGuessVec()[[i]], min=-1, max=90, step=1)
       }
       numericInputs
     }
