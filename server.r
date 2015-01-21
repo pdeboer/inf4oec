@@ -164,16 +164,16 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  # OUTPUT: list of HTML-coded numeric inputs, default values are the guessed points for each question
+  # OUTPUT: list of numeric inputs, default values are the guessed points for each question
   output$numericInputs <- renderUI ({
     if (!is.null(numberOfItems()) && !is.null(maxPointsGuessVec()))
     {        
       numericInputs <- list()
       for (i in 1:numberOfItems())
       {
-        numericInputs[[i]] <- paste0('<label style = "font-weight:bold">Frage ', i, '</label><input id="max', i, '" type="number" value="', maxPointsGuessVec()[[i]], '" min="1" max="100"/>')
+        numericInputs[[i]] <- numericInput(inputId = paste("max", i), label = paste("Frage", i), value = maxPointsGuessVec()[[i]], min=-1, max=90, step=1)
       }
-      HTML(numericInputs)
+      numericInputs
     }
   })
   
