@@ -281,29 +281,28 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  # OUTPUT: list of html elements building a table like structure to present the item statistics
   output$itemStatsLayout <- renderUI ({
     if (!is.null(numberOfItems()) && !is.null(itemStats()))
     {
       layout <- list()
-      layout[[1]] <- ('<div class="row-fluid" style = "font-weight: bold"><div class="span1"></div><div class="span3">Item</div><div class="span3">Schwierigkeit</div><div class="span3">Trennschärfe</div><div class="span2"></div></div>')
+      layout[[1]] <- ('<table class="table table-striped table-hover dataTable", id="itemStatsTable"><thead><tr><th>Item</th><th>Schwierigkeit</th><th>Trennschärfe</th></tr></thead><tbody>')
       
       for (i in 1:numberOfItems())
       {
         if (i %% 2 != 0)
         {
-          color <- "transparent"
+          rowClass <- "odd"
         }
         else
         {
-          color <- "#F9F9F9"
+          rowClass <- "even"
         }
-        layout[[i + 1]] <- paste0('<div class="row-fluid" style="height: 50px; line-height: 50px; background-color:', color, '"><div class="span1"></div><div class="span3">Frage ', i, '</div><div class="span3">', itemStats()[i, 1], '</div><div class="span3">', itemStats()[i, 2], '</div><div class="span2"><input id="check', i, '" type="checkbox"/</div></div>')
+        layout[[i + 1]] <- paste0('<tr class="', rowClass, '"><td>', i, '</td><td>', itemStats()[i, 1], '</td><td>', itemStats()[i, 2], '</td><td><input id="check', i, '" type="checkbox" /></td></tr>')
       }
-      HTML(layout)
+      HTML(c(layout, "</tbody></table>"))
     }
   })
-  
+
   # observe the itemCutoffInput and update item checkboxes accordingly (on value change)
   observe ({
     input$itemCutoffInput
