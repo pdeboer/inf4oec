@@ -1,3 +1,5 @@
+setwd("~/")
+
 library(shiny)
 library(reshape2)
 library(knitr)
@@ -53,10 +55,10 @@ shinyServer(function(input, output, session) {
   observe ({ if (input$back1 != 0) updateTabsetPanel(session, "main", selected = "Schritt 1: Daten einlesen") })
   observe ({ if (input$next3 != 0) updateTabsetPanel(session, "main", selected = "Schritt 3: Maximal erreichbare Punkte") })
   observe ({ if (input$back2 != 0) updateTabsetPanel(session, "main", selected = "Schritt 2: Daten transponieren") })
-  observe ({ if (input$next4 != 0) updateTabsetPanel(session, "main", selected = "Schritt 4: Leere Prüfungen") })
+  observe ({ if (input$next4 != 0) updateTabsetPanel(session, "main", selected = "Schritt 4: Leere Pr??fungen") })
   observe ({ if (input$back3 != 0) updateTabsetPanel(session, "main", selected = "Schritt 3: Maximal erreichbare Punkte") })
   observe ({ if (input$next5 != 0) updateTabsetPanel(session, "main", selected = "Schritt 5: Rohwertverteilung") })
-  observe ({ if (input$back4 != 0) updateTabsetPanel(session, "main", selected = "Schritt 4: Leere Prüfungen") })
+  observe ({ if (input$back4 != 0) updateTabsetPanel(session, "main", selected = "Schritt 4: Leere Pr??fungen") })
   observe ({ if (input$next6 != 0) updateTabsetPanel(session, "main", selected = "Schritt 6: Itemkennwerte") })
   observe ({ if (input$back5 != 0) updateTabsetPanel(session, "main", selected = "Schritt 5: Rohwertverteilung") })
   observe ({ if (input$next7 != 0) updateTabsetPanel(session, "main", selected = "Schritt 7: Notengebung") })
@@ -156,6 +158,39 @@ shinyServer(function(input, output, session) {
     }
   })
   
+  # vector with a guess (based on the input data) about type for each item (sc or mc)
+  itemTypesGuessVec <- reactive ({
+    if (!is.null(rawData()))
+    {
+      temp <- dcast(rawData(), eval(parse(text = colnames(rawData())[1])) ~ eval(parse(text = colnames(rawData())[3])), value.var = colnames(rawData())[ncol(rawData()) - 1])
+      temp <- temp[-1]
+      temp <- colSums(temp)
+      temp <- ifelse(temp > 0, '<option value="sc" selected>Single Choice</option><option value="mc">Multiple Choice</option>', '<option value="sc">Single Choice</option><option value="mc" selected>Multiple Choice</option>')
+    }
+    temp
+  })
+  
+  # vector with a guess (based on the input data) about the number of alternatives for each item
+  itemAlternGuessVec <- reactive ({
+    if (!is.null(rawData()))
+    {
+      rtn <- rep(0, numberOfItems())
+      for (j in 1:(ncol(rawData()) - 4))
+      {
+        temp <- dcast(rawData(), eval(parse(text = colnames(rawData())[1])) ~ eval(parse(text = colnames(rawData())[3])), value.var = colnames(rawData())[ncol(rawData()) - j])
+        temp <- temp[-1]
+        temp <- colSums(temp)
+        temp <- ifelse(temp != 0, ncol(rawData()) - 3 - j, 0)
+        rtn <- ifelse(rtn > 0, rtn, temp)
+        if (as.logical(all(rtn) > 0))
+        {
+          break
+        }
+      }
+    }
+    rtn
+  })
+  
   # vector with a guess (based on the input data) about the maximum points for each item
   maxPointsGuessVec <- reactive ({
     if (!is.null(itemData()))
@@ -166,18 +201,135 @@ shinyServer(function(input, output, session) {
   
   # OUTPUT: list of numeric inputs, default values are the guessed points for each question
   output$numericInputs <- renderUI ({
-    if (!is.null(numberOfItems()) && !is.null(maxPointsGuessVec()))
-    {        
+    if (!is.null(numberOfItems()) && !is.null(maxPointsGuessVec()) && !is.null(itemTypesGuessVec()))
+    {
       numericInputs <- list()
+      numericInputs[[1]] <- ('
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th>
+                Item
+              </th>
+              <th>
+                Typ
+              </th>
+              <th>
+                Anzahl Alternativen
+              </th>
+              <th>
+                Maximal erreichbare Punkte
+              </th>
+            </tr>
+          </thead>
+          <tfoot>
+            <tr>
+              <th>
+                Item
+              </th>
+              <th>
+                Typ
+              </th>
+              <th>
+                Anzahl Alternativen
+              </th>
+              <th>
+                Maximal erreichbare Punkte
+              </th>
+            </tr>
+          </tfoot>
+          <tbody>
+      ')
+      
       for (i in 1:numberOfItems())
       {
-        numericInputs[[i]] <- numericInput(inputId = paste0("max", i), label = paste("Frage", i), value = maxPointsGuessVec()[[i]], min=-1, max=90, step=1)
+        numericInputs[[i + 1]] <- paste0('
+        <tr>
+          <td width="10%">Frage ',
+            i,'
+          </td>
+          <td>
+            <div class="form-group shiny-input-container">
+              <div>
+                <select id="type', i, '">',
+                  itemTypesGuessVec()[[i]],'
+                </select>
+                <script type="application/json" data-for="type', i, '" data-nonempty="">{}</script>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="form-group shiny-input-container">
+              <input id="', paste0("altern", i), '" type="number" class="form-control" value="', itemAlternGuessVec()[[i]], '" step="1"/>
+            </div>
+          </td>
+          <td>
+            <div class="form-group shiny-input-container">
+              <input id="', paste0("max", i), '" type="number" class="form-control" value="', maxPointsGuessVec()[[i]], '" step="1"/>
+            </div>
+          </td>
+        </tr>
+        ')
       }
-      numericInputs
+      HTML(c(numericInputs, "</tbody></table>"))
     }
   })
   
-  # vector of the user validated maximum points for each question
+  # vector of the user validated item type for each item
+  itemTypesValidatedVec <- reactive ({
+    if (!is.null(numberOfItems()) && !is.null(input$type1))
+    {
+      checkNA <- TRUE
+      
+      for (i in 1:numberOfItems())
+      {
+        if (is.na(eval(parse(text = paste0('input$type', i)))))
+        {
+          checkNA <- FALSE
+          break
+        }
+      }
+      
+      if (checkNA)
+      {
+        temp <- c()
+        for (i in 1:numberOfItems())
+        {
+          temp <- append(temp, eval(parse(text = paste0('input$type', i))))
+        }
+        temp
+      }
+    }
+  })
+  
+  # vector of the user validated number of alternatives for each item
+  itemAlternValidatedVec <- reactive ({
+    if (!is.null(numberOfItems()) && !is.null(input$altern1))
+    {
+      checkNA <- TRUE
+      
+      for (i in 1:numberOfItems())
+      {
+        if (is.na(eval(parse(text = paste0('input$altern', i)))))
+        {
+          checkNA <- FALSE
+          break
+        }
+      }
+      
+      if (checkNA)
+      {
+        temp <- c()
+        for (i in 1:numberOfItems())
+        {
+          temp <- append(temp, eval(parse(text = paste0('input$altern', i))))
+        }
+        temp
+      }
+    }
+  })
+  
+  # vector of the user validated maximum points for each item
   maxPointsValidatedVec <- reactive ({
     if (!is.null(numberOfItems()) && !is.null(input$max1))
     {
@@ -216,7 +368,7 @@ shinyServer(function(input, output, session) {
   output$text_numberOfEmptyTests <- renderUI ({
     if (!is.null(numberOfInvalidExams()))
     {
-      HTML(paste0(p("Anzahl leere Prüfungen ", style = "font-weight: bold"), numberOfInvalidExams()))
+      HTML(paste0(p("Anzahl leere Pr??fungen ", style = "font-weight: bold"), numberOfInvalidExams()))
     }
   })
   
@@ -226,7 +378,7 @@ shinyServer(function(input, output, session) {
     {
       if (input$distributionPlotDecision == "Histogramm")
       {
-        h <- hist(rowSums(itemData()), main="Verteilung der Punkte", xlab="Anzahl Punkte", ylab="Häufigkeit", col = "lightblue", breaks = maxPointsValidatedSum()/5, xlim=c(0, maxPointsValidatedSum()), xaxt='n')
+        h <- hist(rowSums(itemData()), main="Verteilung der Punkte", xlab="Anzahl Punkte", ylab="H??ufigkeit", col = "lightblue", breaks = maxPointsValidatedSum()/5, xlim=c(0, maxPointsValidatedSum()), xaxt='n')
         axis(1, at=seq(0, maxPointsValidatedSum(), 5))
         xfit <- seq(0, maxPointsValidatedSum(), length=maxPointsValidatedSum())
         yfit <- dnorm(xfit, mean=mean(rowSums(itemData())), sd=sd(rowSums(itemData())))
@@ -273,36 +425,75 @@ shinyServer(function(input, output, session) {
   output$itemCutoffInput <- renderUI ({
     if (!is.null(itemCutoffDefault()))
     {
-      numericInput("itemCutoffInput", "Legen Sie den Mindestwert für die Trennschärfe fest.", min=-1, max=1, step=0.01, value=itemCutoffDefault())
+      numericInput("itemCutoffInput", "Legen Sie den Mindestwert f??r die Trennsch??rfe fest.", min=-1, max=1, step=0.01, value=itemCutoffDefault())
     }
     else
     {
-      numericInput("itemCutoffInput", "Legen Sie den Mindestwert für die Trennschärfe fest.", min=-1, max=1, step=0.01, value=0)
+      numericInput("itemCutoffInput", "Legen Sie den Mindestwert f??r die Trennsch??rfe fest.", min=-1, max=1, step=0.01, value=0)
     }
   })
+  
+  
+  
+  for (i in 1:4)
+  {
+    output$i <- renderPlot ({
+      cars <- c(1, 3, 6, 4, 9)
+      plot(cars)
+    })
+  }
+  
+  output$a_out <- renderPrint({
+    res <- lapply(1:5, function(i) input[[paste0('a', i)]])
+    str(setNames(res, paste0('a', 1:5)))
+  })
+  
+  lapply(1:10, function(i) {
+    output[[paste0('b', i)]] <- renderUI({
+      strong(paste0('Hi, this is output B#', i))
+    })
+  })
+  
+  
   
   output$itemStatsLayout <- renderUI ({
     if (!is.null(numberOfItems()) && !is.null(itemStats()))
     {
       layout <- list()
-      layout[[1]] <- ('<table class="table table-striped table-hover dataTable", id="itemStatsTable"><thead><tr><th>Item</th><th>Schwierigkeit</th><th>Trennschärfe</th></tr></thead><tbody>')
+      layout[[1]] <- ('<table class="table table-striped table-hover", id="itemStatsTable"><thead><tr><th>Item</th><th>Schwierigkeit</th><th>Trennsch??rfe</th><th></th></tr></thead><tbody>')
       
       for (i in 1:numberOfItems())
       {
-        if (i %% 2 != 0)
+        if (itemTypesValidatedVec()[[i]] == "sc")
         {
-          rowClass <- "odd"
+          layout[[i + 1]] <- paste0('<tr><td>', i, '</td><td>', itemStats()[i, 1], '</td><td>', itemStats()[i, 2], '</td><td><input id="check', i, '" type="checkbox" /></td></tr>')
         }
         else
         {
-          rowClass <- "even"
+          temp <- c()
+          for (j in 1:itemAlternValidatedVec()[[i]])
+          {
+            temp <- append(temp, paste0('<tr style="font-weight: lighter">
+              <td>', i, '.', j, '</td>
+              <td>
+                <div>
+                <div id="1" class="shiny-plot-output" style="width: 200px ; height: 200px">
+                </div>
+                </div>
+              </td>
+              <td></td>
+              <td>
+                <input id="subcheck', i, j, '" type="checkbox" checked/>
+              </td>
+            </tr>'))
+          }
+          layout[[i + 1]] <- paste0('<tr><td>', i, '</td><td>', itemStats()[i, 1], '</td><td>', itemStats()[i, 2], '</td><td><input id="check', i, '" type="checkbox" /></td></tr>', paste0(temp, collapse = ""))
         }
-        layout[[i + 1]] <- paste0('<tr class="', rowClass, '"><td>', i, '</td><td>', itemStats()[i, 1], '</td><td>', itemStats()[i, 2], '</td><td><input id="check', i, '" type="checkbox" /></td></tr>')
       }
       HTML(c(layout, "</tbody></table>"))
     }
   })
-
+  
   # observe the itemCutoffInput and update item checkboxes accordingly (on value change)
   observe ({
     input$itemCutoffInput
@@ -567,7 +758,7 @@ shinyServer(function(input, output, session) {
     {
       h <- hist(grades()[ , 3], breaks=seq(0.875,6.125,0.25))
       c = ifelse(h$mids < 4, "red", "green");
-      plot(h, main="Verteilung der Noten", xlab="Note", ylab="Häufigkeit", xlim=c(0.75,6.25), ylim=c(0,modalWert()+10), col=c, border="white", labels=TRUE)
+      plot(h, main="Verteilung der Noten", xlab="Note", ylab="H??ufigkeit", xlim=c(0.75,6.25), ylim=c(0,modalWert()+10), col=c, border="white", labels=TRUE)
     }
   })
   

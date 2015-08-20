@@ -7,7 +7,7 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
       fluidRow(
         column(12,
           h1("Willkommen", style = "color: lightblue"),
-          p("Diese Applikation hilft Ihnen, die Prüfung zur Vorlesung", em("Informatik für Ökonomen I"), "effizient und übersichtlich auszuwerten."),
+          p("Diese Applikation hilft Ihnen, die Pr??fung zur Vorlesung", em("Informatik f??r ??konomen I"), "effizient und ??bersichtlich auszuwerten."),
           tags$hr(),
           actionButton("next1", h4("zum ersten Schritt", style = "color: lightblue"))
         )
@@ -21,8 +21,8 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
         fluidRow(
           column(12,
             h1("Schritt 1: Daten einlesen", style = "color: lightblue"),
-            p('Wählen Sie eine CSV-Datei mit den Spalten "Matrikelnummer", "Serie", "Fragennummer", Alternativen ("A", "B", "C" etc.) und "Punkte" aus.'),
-            p("Prüfen Sie, ob die Datei korrekt eingelesen wurde. Passen Sie anderenfalls die Einstellungen in der Seitenleiste links an.", tags$br(), "Bitte beachten Sie, dass die Daten nach diesem Schritt nur weiterverarbeitet werden, wenn die Anzahl Fragen > 1 ist."),
+            p('W??hlen Sie eine CSV-Datei mit den Spalten "Matrikelnummer", "Serie", "Fragennummer", Alternativen ("A", "B", "C" etc.) und "Punkte" aus.'),
+            p("Pr??fen Sie, ob die Datei korrekt eingelesen wurde. Passen Sie anderenfalls die Einstellungen in der Seitenleiste links an.", tags$br(), "Bitte beachten Sie, dass die Daten nach diesem Schritt nur weiterverarbeitet werden, wenn die Anzahl Fragen > 1 ist."),
             tags$hr()
           )
         ),
@@ -37,7 +37,7 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
             tags$hr(),
             fluidRow(
               column(6,
-                actionButton("back0", h4("zurück zum Anfang", style = "color: lightgray"))
+                actionButton("back0", h4("zur??ck zum Anfang", style = "color: lightgray"))
               ),
               column(6,
                 actionButton("next2", h4("weiter zu Schritt 2", style = "color: lightblue"))
@@ -55,7 +55,7 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
         fluidRow(
           column(12,
             h1("Schritt 2: Daten transponieren", style = "color: lightblue"),
-            p("Prüfen Sie aufgrund der Anzahl Studenten/Items, ob die Daten korrekt transponiert wurden."),
+            p("Pr??fen Sie aufgrund der Anzahl Studenten/Items, ob die Daten korrekt transponiert wurden."),
             p("Stellen Sie anderenfalls sicher, dass die eingelesene Datei die unter Schritt 1 beschriebene Strukutr aufweist."),
             tags$hr()
           )
@@ -64,7 +64,7 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
           column(4,
             fluidRow(
               column(6,
-                actionButton("back1", h4("zurück zu Schritt 1", style = "color: lightgray"))
+                actionButton("back1", h4("zur??ck zu Schritt 1", style = "color: lightgray"))
               ),
               column(6,
                 actionButton("next3", h4("weiter zu Schritt 3", style = "color: lightblue"))
@@ -87,7 +87,7 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
         fluidRow(
           column(12,
             h1("Schritt 3: Maximal erreichbare Punkte", style = "color: lightblue"),
-            p("Prüfen Sie, ob die maximal erreichbaren Punkte für jedes Item korrekt ausgelesen wurden."),
+            p("Pr??fen Sie, ob die maximal erreichbaren Punkte f??r jedes Item korrekt ausgelesen wurden."),
             p("Passen Sie anderenfalls die Anzahl Punkte manuell an."),
             tags$hr()
           )
@@ -96,7 +96,7 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
           column(4,
             fluidRow(
               column(6,
-                actionButton("back2", h4("zurück zu Schritt 2", style = "color: lightgray"))
+                actionButton("back2", h4("zur??ck zu Schritt 2", style = "color: lightgray"))
               ),
               column(6,
                 actionButton("next4", h4("weiter zu Schritt 4", style = "color: lightblue"))
@@ -112,22 +112,22 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
   ),
   
   navbarMenu("Itemanalyse",
-    tabPanel("Schritt 4: Leere Prüfungen",
+    tabPanel("Schritt 4: Leere Pr??fungen",
       fluidPage(
         fluidRow(
           column(12,
-            h1("Schritt 4: Leere Prüfungen", style = "color: lightblue"),
-            p("Es wird empfohlen, leere Prüfungen für die Itemanalyse auszuschliessen."),
+            h1("Schritt 4: Leere Pr??fungen", style = "color: lightblue"),
+            p("Es wird empfohlen, leere Pr??fungen f??r die Itemanalyse auszuschliessen."),
             tags$hr()
           )
         ),
         fluidRow(
           column(4,
-            selectInput("emptyTestsDecision", label = "Leere Prüfungen ausschliessen?", choices = list("Ja", "Nein"), selected = "Ja"),
+            selectInput("emptyTestsDecision", label = "Leere Pr??fungen ausschliessen?", choices = list("Ja", "Nein"), selected = "Ja"),
             tags$hr(),
             fluidRow(
               column(6,
-                actionButton("back3", h4("zurück zu Schritt 3", style = "color: lightgrey"))
+                actionButton("back3", h4("zur??ck zu Schritt 3", style = "color: lightgrey"))
               ),
               column(6,
                 actionButton("next5", h4("weiter zu Schritt 5", style = "color: lightblue"))
@@ -145,13 +145,13 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
         fluidRow(
           column(12,
             h1("Schritt 5: Rohwertverteilung", style = "color: lightblue"),
-            p("Betrachten Sie die Verteilung der erreichten Punkte in der gewünschten Darstellung."),
+            p("Betrachten Sie die Verteilung der erreichten Punkte in der gew??nschten Darstellung."),
             tags$hr()
           )
         ),
         fluidRow(
           column(4,
-            selectInput("distributionPlotDecision", label = "Wählen Sie eine Darstellung.", choices = list("Histogramm", "Quantil-Quantil-Plot"), selected = "Histogramm"),
+            selectInput("distributionPlotDecision", label = "W??hlen Sie eine Darstellung.", choices = list("Histogramm", "Quantil-Quantil-Plot"), selected = "Histogramm"),
             conditionalPanel("input.distributionPlotDecision == 'Quantil-Quantil-Plot'",
               tags$hr(),
               fluidRow(
@@ -166,7 +166,7 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
             tags$hr(),
             fluidRow(
               column(6,
-                actionButton("back4", h4("zurück zu Schritt 4", style = "color: lightgrey"))
+                actionButton("back4", h4("zur??ck zu Schritt 4", style = "color: lightgrey"))
               ),
               column(6,
                 actionButton("next6", h4("weiter zu Schritt 6", style = "color: lightblue"))
@@ -184,8 +184,8 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
         fluidRow(
           column(12,
             h1("Schritt 6: Itemkennwerte", style = "color: lightblue"),
-            p("Betrachten Sie die Itemschwierigkeiten und -trennschärfen."),
-            p("Entscheiden Sie, welche Items für die Notengebung berücksichtigt werden sollen.", br(), "Dies kann wahlweise mit dem cutoff-Regler in der Seitenleiste links oder manuell durch Klicken auf die Checkboxen geschehen."),
+            p("Betrachten Sie die Itemschwierigkeiten und -trennsch??rfen."),
+            p("Entscheiden Sie, welche Items f??r die Notengebung ber??cksichtigt werden sollen.", br(), "Dies kann wahlweise mit dem cutoff-Regler in der Seitenleiste links oder manuell durch Klicken auf die Checkboxen geschehen."),
             tags$hr()
           )
         ),
@@ -198,7 +198,7 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
                 icon("info-circle", "fa-2x")
               ),
               column(11,
-                p("Die", strong("Itemschwierigkeit"), "wird durch einen Index gekennzeichnet, der dem Anteil derjenigen Personen entspricht, die das Item richtig lösen oder bejahen.")
+                p("Die", strong("Itemschwierigkeit"), "wird durch einen Index gekennzeichnet, der dem Anteil derjenigen Personen entspricht, die das Item richtig l??sen oder bejahen.")
               )
             ),
             fluidRow(
@@ -206,14 +206,14 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
                 icon("info-circle", "fa-2x")
               ),
               column(11,
-                p("Der", strong("Trennschärfe"), "eines Items ist zu entnehmen, wie gut das gesamte Testergebnis aufgrund der Beantwortung eines einzelnen Items vorhersagbar ist.")
+                p("Der", strong("Trennsch??rfe"), "eines Items ist zu entnehmen, wie gut das gesamte Testergebnis aufgrund der Beantwortung eines einzelnen Items vorhersagbar ist.")
               )
             ),
-            p("Bortz, J., & Döring, N. (2006).", em("Forschungsmethoden und evaluation: für human-und sozialwissenschaftler."), "Springer."),
+            p("Bortz, J., & D??ring, N. (2006).", em("Forschungsmethoden und evaluation: f??r human-und sozialwissenschaftler."), "Springer."),
             tags$hr(),
             fluidRow(
               column(6,
-                actionButton("back5", h4("zurück zu Schritt 5", style = "color: lightgrey"))
+                actionButton("back5", h4("zur??ck zu Schritt 5", style = "color: lightgrey"))
               ),
               column(6,
                 actionButton("next7", h4("weiter zu Schritt 7", style = "color: lightblue"))
@@ -234,7 +234,7 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
         fluidRow(
           column(12,
             h1("Schritt 7: Notengebung", style = "color: lightblue"),
-            p("Legen Sie mithilfe der beiden Schiebergler in der Seitenleiste links die benötigten Mindestpunktzahlen für die Noten 4 und 6 fest."),
+            p("Legen Sie mithilfe der beiden Schiebergler in der Seitenleiste links die ben??tigten Mindestpunktzahlen f??r die Noten 4 und 6 fest."),
             p("Im Hauptfenster sehen Sie, wie sich Ihre Entscheidungen auf die Verteilung der Noten auswirken."),
             tags$hr()
           )
@@ -258,7 +258,7 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
                 icon("warning", "fa-2x")
               ),
               column(11,
-                p("Diese Angaben beziehen sich auf", strong("nicht leere"), "Prüfungen!")
+                p("Diese Angaben beziehen sich auf", strong("nicht leere"), "Pr??fungen!")
               )
             ),
             tags$hr(),
@@ -267,7 +267,7 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
             tags$hr(),
             fluidRow(
               column(6,
-                actionButton("back6", h4("zurück zu Schritt 6", style = "color: lightgrey"))
+                actionButton("back6", h4("zur??ck zu Schritt 6", style = "color: lightgrey"))
               ),
               column(6,
                 actionButton("next8", h4("weiter zu Schritt 8", style = "color: lightblue"))
@@ -306,7 +306,7 @@ shinyUI(navbarPage("Auswertung inf4oec", id = "main", inverse = TRUE, collapsabl
             tags$hr(),
             fluidRow(
               column(6,
-                actionButton("back7", h4("zurück zu Schritt 7", style = "color: lightgrey"))
+                actionButton("back7", h4("zur??ck zu Schritt 7", style = "color: lightgrey"))
               ),
               column(6,
                 actionButton("next0", h4("zum Anfang", style = "color: lightblue"))
