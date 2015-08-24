@@ -49,23 +49,23 @@ itemTotalCorrelations <- function (itemData)
 shinyServer(function(input, output, session) {
   
   # observe all the navigation buttons and change the tab on click
-  observe ({ if (input$next1 != 0) updateTabsetPanel(session, "main", selected = "Schritt 1: Daten einlesen") })
-  observe ({ if (input$back0 != 0) updateTabsetPanel(session, "main", selected = "Information") })
-  observe ({ if (input$next2 != 0) updateTabsetPanel(session, "main", selected = "Schritt 2: Daten transponieren") })
-  observe ({ if (input$back1 != 0) updateTabsetPanel(session, "main", selected = "Schritt 1: Daten einlesen") })
-  observe ({ if (input$next3 != 0) updateTabsetPanel(session, "main", selected = "Schritt 3: Maximal erreichbare Punkte") })
-  observe ({ if (input$back2 != 0) updateTabsetPanel(session, "main", selected = "Schritt 2: Daten transponieren") })
-  observe ({ if (input$next4 != 0) updateTabsetPanel(session, "main", selected = "Schritt 4: Leere Pr??fungen") })
-  observe ({ if (input$back3 != 0) updateTabsetPanel(session, "main", selected = "Schritt 3: Maximal erreichbare Punkte") })
-  observe ({ if (input$next5 != 0) updateTabsetPanel(session, "main", selected = "Schritt 5: Rohwertverteilung") })
-  observe ({ if (input$back4 != 0) updateTabsetPanel(session, "main", selected = "Schritt 4: Leere Pr??fungen") })
-  observe ({ if (input$next6 != 0) updateTabsetPanel(session, "main", selected = "Schritt 6: Itemkennwerte") })
-  observe ({ if (input$back5 != 0) updateTabsetPanel(session, "main", selected = "Schritt 5: Rohwertverteilung") })
-  observe ({ if (input$next7 != 0) updateTabsetPanel(session, "main", selected = "Schritt 7: Notengebung") })
-  observe ({ if (input$back6 != 0) updateTabsetPanel(session, "main", selected = "Schritt 6: Itemkennwerte") })
-  observe ({ if (input$next8 != 0) updateTabsetPanel(session, "main", selected = "Schritt 8: Bericht") })
-  observe ({ if (input$back7 != 0) updateTabsetPanel(session, "main", selected = "Schritt 7: Notengebung") })
-  observe ({ if (input$next0 != 0) updateTabsetPanel(session, "main", selected = "Information") })
+  #observe ({ if (input$next1 != 0) updateTabsetPanel(session, "main", selected = "Schritt 1: Daten einlesen") })
+  #observe ({ if (input$back0 != 0) updateTabsetPanel(session, "main", selected = "Information") })
+  #observe ({ if (input$next2 != 0) updateTabsetPanel(session, "main", selected = "Schritt 2: Daten transponieren") })
+  #observe ({ if (input$back1 != 0) updateTabsetPanel(session, "main", selected = "Schritt 1: Daten einlesen") })
+  #observe ({ if (input$next3 != 0) updateTabsetPanel(session, "main", selected = "Schritt 3: Maximal erreichbare Punkte") })
+  #observe ({ if (input$back2 != 0) updateTabsetPanel(session, "main", selected = "Schritt 2: Daten transponieren") })
+  #observe ({ if (input$next4 != 0) updateTabsetPanel(session, "main", selected = "Schritt 4: Leere Pr??fungen") })
+  #observe ({ if (input$back3 != 0) updateTabsetPanel(session, "main", selected = "Schritt 3: Maximal erreichbare Punkte") })
+  #observe ({ if (input$next5 != 0) updateTabsetPanel(session, "main", selected = "Schritt 5: Rohwertverteilung") })
+  #observe ({ if (input$back4 != 0) updateTabsetPanel(session, "main", selected = "Schritt 4: Leere Pr??fungen") })
+  #observe ({ if (input$next6 != 0) updateTabsetPanel(session, "main", selected = "Schritt 6: Itemkennwerte") })
+  #observe ({ if (input$back5 != 0) updateTabsetPanel(session, "main", selected = "Schritt 5: Rohwertverteilung") })
+  #observe ({ if (input$next7 != 0) updateTabsetPanel(session, "main", selected = "Schritt 7: Notengebung") })
+  #observe ({ if (input$back6 != 0) updateTabsetPanel(session, "main", selected = "Schritt 6: Itemkennwerte") })
+  #observe ({ if (input$next8 != 0) updateTabsetPanel(session, "main", selected = "Schritt 8: Bericht") })
+  #observe ({ if (input$back7 != 0) updateTabsetPanel(session, "main", selected = "Schritt 7: Notengebung") })
+  #observe ({ if (input$next0 != 0) updateTabsetPanel(session, "main", selected = "Information") })
   
   # read the csv provided by the user to a data frame
   rawData <- reactive ({
@@ -80,6 +80,22 @@ shinyServer(function(input, output, session) {
     if (!is.null(rawData()))
     {
       rawData()
+    }
+  })
+  
+  # rawData for series A
+  rawData_a <- reactive ({
+    if (!is.null(rawData()))
+    {
+      split(rawData(), rawData()$Serie)$A
+    }
+  })
+  
+  # rawData for series B
+  rawData_b <- reactive ({
+    if (!is.null(rawData()))
+    {
+      split(rawData(), rawData()$Serie)$B
     }
   })
   
@@ -396,12 +412,133 @@ shinyServer(function(input, output, session) {
     }
   })
   
+  #####
+  #####
+  #####
+  #####
+  #####
+  #####
+  #####
+  #####
+  #####
+  #####
+  
+  # solution for series a
+  solution_a <- reactive ({
+    temp <- subset(subset(rawData_a(), Fragenummer == c(1:numberOfItems()) & Punkte == maxPointsValidatedVec()), !duplicated(Fragenummer))
+    temp <- temp[order(temp$Fragenummer), ]
+    temp <- subset(temp, select = -c(1, 2, 3, ncol(temp)))
+    temp <- as.vector(t(temp))
+  })
+  
+  # solution for series b
+  solution_b <- reactive ({
+    temp <- subset(subset(rawData_b(), Fragenummer == c(1:numberOfItems()) & Punkte == maxPointsValidatedVec()), !duplicated(Fragenummer))
+    temp <- temp[order(temp$Fragenummer), ]
+    temp <- subset(temp, select = -c(1, 2, 3, ncol(temp)))
+    temp <- as.vector(t(temp))
+  })
+  
+  # answers for series a
+  answers_a <- reactive ({
+    temp <- rawData_a()
+    temp$pattern <- paste(temp$A, temp$B, temp$C, temp$D, temp$E)
+    temp <- dcast(temp, matrikelhash ~ Fragenummer, value.var = "pattern")
+    temp <- data.frame(apply(temp, 2, function(x) colsplit(x, " ", c("A", "B", "C", "D", "E"))))
+    temp <- subset(temp, select = -c(max(itemAlternValidatedVec()) - 3, max(itemAlternValidatedVec()) - 2, max(itemAlternValidatedVec()) - 1, max(itemAlternValidatedVec())))
+  })
+  
+  # answers for series b
+  answers_b <- reactive ({
+    temp <- rawData_b()
+    temp$pattern <- paste(temp$A, temp$B, temp$C, temp$D, temp$E)
+    temp <- dcast(temp, matrikelhash ~ Fragenummer, value.var = "pattern")
+    temp <- data.frame(apply(temp, 2, function(x) colsplit(x, " ", c("A", "B", "C", "D", "E"))))
+    temp <- subset(temp, select = -c(max(itemAlternValidatedVec()) - 3, max(itemAlternValidatedVec()) - 2, max(itemAlternValidatedVec()) - 1, max(itemAlternValidatedVec())))
+  })
+  
+  # scores for series a
+  scores_a <- reactive ({
+    itemType <- rep(itemTypesValidatedVec(), each = max(itemAlternValidatedVec()))
+    
+    temp <- data.frame(t(apply(answers_a()[-1], 1, function(x) ifelse(x == solution_a(), 1, ifelse(itemType == "sc", 0, ifelse(itemType == "mc" & x == 0, 0, -1))))))
+    
+    # determine which columns to delete (based on the number of Alternatives for each item)
+    indexes <- seq(5, ncol(temp), by = max(itemAlternValidatedVec()))
+    indexes <- mapply(function(x, y) ifelse(x < max(itemAlternValidatedVec()), y - (max(itemAlternValidatedVec()) - x) + 1, NA), itemAlternValidatedVec(), indexes)
+    indexes <- indexes[!is.na(indexes)]
+    
+    temp <- subset(temp, select = -(indexes))
+  })
+  
+  # scores for series b
+  scores_b <- reactive ({
+    itemType <- rep(itemTypesValidatedVec(), each = max(itemAlternValidatedVec()))
+    
+    temp <- data.frame(t(apply(answers_b()[-1], 1, function(x) ifelse(x == solution_b(), 1, ifelse(itemType == "sc", 0, ifelse(itemType == "mc" & x == 0, 0, -1))))))
+    
+    # determine which columns to delete (based on the number of Alternatives for each item)
+    indexes <- seq(5, ncol(temp), by = max(itemAlternValidatedVec()))
+    indexes <- mapply(function(x, y) ifelse(x < max(itemAlternValidatedVec()), y - (max(itemAlternValidatedVec()) - x) + 1, NA), itemAlternValidatedVec(), indexes)
+    indexes <- indexes[!is.na(indexes)]
+    
+    temp <- subset(temp, select = -(indexes))
+  })
+  
+  # points for series a
+  points_a <- reactive({
+    itemMaxScores <- rep(maxPointsValidatedVec(), each = max(itemAlternValidatedVec()))
+    itemType <- rep(itemTypesValidatedVec(), each = max(itemAlternValidatedVec()))
+    
+    # determine which columns to delete (based on the number of Alternatives for each item)
+    indexes <- seq(5, 160, by = max(itemAlternValidatedVec()))
+    indexes <- mapply(function(x, y) ifelse(x < max(itemAlternValidatedVec()), y - (max(itemAlternValidatedVec()) - x) + 1, NA), itemAlternValidatedVec(), indexes)
+    indexes <- indexes[!is.na(indexes)]
+    
+    pointsreachable <- ifelse(itemType == "mc", itemMaxScores/4, itemMaxScores * solution_a())
+    pointsreachable <- pointsreachable[-indexes]
+    
+    points_received <- data.frame(mapply(`*`, scores_a(), pointsreachable))
+  })
+  
+  # points for series b
+  points_b <- reactive({
+    itemMaxScores <- rep(maxPointsValidatedVec(), each = max(itemAlternValidatedVec()))
+    itemType <- rep(itemTypesValidatedVec(), each = max(itemAlternValidatedVec()))
+    
+    # determine which columns to delete (based on the number of Alternatives for each item)
+    indexes <- seq(5, ncol(160), by = max(itemAlternValidatedVec()))
+    indexes <- mapply(function(x, y) ifelse(x < max(itemAlternValidatedVec()), y - (max(itemAlternValidatedVec()) - x) + 1, NA), itemAlternValidatedVec(), indexes)
+    indexes <- indexes[!is.na(indexes)]
+    
+    pointsreachable <- ifelse(itemType == "mc", itemMaxScores/4, itemMaxScores * solution_b())
+    pointsreachable <- pointsreachable[-indexes]
+    
+    points_received <- data.frame(mapply(`*`, scores_b(), pointsreachable))
+  })
+  
+  #####
+  #####
+  #####
+  #####
+  #####
+  #####
+  #####
+  #####
+  #####
+  #####
+  
   # two item statistics: item difficulty and item total correlation
   itemStats <- reactive ({
     if (!is.null(itemData()) && !is.null(maxPointsValidatedVec()))
     {
       cbind(itemDifficulties(itemData(), maxPointsValidatedVec()), itemTotalCorrelations(itemData()))
     }
+  })
+  
+  # two item statistics for every subitem: item difficulty and item total correlation
+  subitemStats <- reactive ({
+    itemTotalCorrelations(points_a())
   })
   
   # the default (starting) cut off value for the item total correlation (chosen such that the two items are below)
@@ -435,6 +572,20 @@ shinyServer(function(input, output, session) {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   for (i in 1:4)
   {
     output$i <- renderPlot ({
@@ -456,7 +607,13 @@ shinyServer(function(input, output, session) {
   
   
   
+  
+  
+  
   output$itemStatsLayout <- renderUI ({
+    
+    stats <- subitemStats()
+    
     if (!is.null(numberOfItems()) && !is.null(itemStats()))
     {
       layout <- list()
@@ -467,6 +624,7 @@ shinyServer(function(input, output, session) {
         if (itemTypesValidatedVec()[[i]] == "sc")
         {
           layout[[i + 1]] <- paste0('<tr><td>', i, '</td><td>', itemStats()[i, 1], '</td><td>', itemStats()[i, 2], '</td><td><input id="check', i, '" type="checkbox" /></td></tr>')
+          stats <- stats[-c(1:itemAlternValidatedVec()[[i]])]
         }
         else
         {
@@ -477,15 +635,18 @@ shinyServer(function(input, output, session) {
               <td>', i, '.', j, '</td>
               <td>
                 <div>
-                <div id="1" class="shiny-plot-output" style="width: 200px ; height: 200px">
+                <div id="1" class="shiny-plot-output" style="width: 200px">
                 </div>
                 </div>
               </td>
-              <td></td>
+              <td>',
+                stats[[1]]
+              ,'</td>
               <td>
                 <input id="subcheck', i, j, '" type="checkbox" checked/>
               </td>
             </tr>'))
+            stats <- stats[-1]
           }
           layout[[i + 1]] <- paste0('<tr><td>', i, '</td><td>', itemStats()[i, 1], '</td><td>', itemStats()[i, 2], '</td><td><input id="check', i, '" type="checkbox" /></td></tr>', paste0(temp, collapse = ""))
         }
@@ -799,5 +960,117 @@ shinyServer(function(input, output, session) {
       
     }
   })
+  
+  
+  
+  
+  
+  # OUTPUT: TEST!!!!
+  output$testOutput <- renderUI ({
+    
+    temp <- '
+      <table class="table table-striped table-hover">
+        <thead>
+          <tr>
+            <th width = "20%">
+              Item
+            </th>
+            <th width = "60%">
+              Type
+            </th>
+            <th width = "20%">
+              Points
+            </th>
+          </tr>
+        </thead>
+        <tbody>'
+    
+    for (i in 1:32)
+    {
+      temp <- paste0(temp, '
+        <tr>
+          <td>
+            ', i, '
+          </td>
+          <td>
+            Multiple Choice
+          </td>
+          <td>
+            8
+          </td>
+        </tr>
+      ')
+      
+      temp <- paste0(temp, '
+        <tr style = "font-weight: lighter">
+          <td colspan = "3">
+            <table width = "100%">
+              <tr>
+                <td width = "20%">
+                </td>
+                <td>
+                  True
+                </td>
+                <td>
+                  False
+                </td>
+                <td>
+                  Corresponding
+                </td>
+              </tr>
+      ')
+      
+      for (j in 1:5)
+      {
+        temp <- paste0(temp, '
+          <tr>
+            <td>
+              ', i, '.', j, '
+            </td>
+            <td>
+              <input id="outliers" type="checkbox"/>
+            </td>
+            <td>
+              <input id="outliers" type="checkbox"/>
+            </td>
+            <td>
+              <div>
+                <select id="variable"><option value="1" selected>', j, '</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+                <script type="application/json" data-for="variable" data-nonempty="">{}</script>
+              </div>
+            </td>
+          </tr>
+        ')
+      }
+      
+      temp <- paste0(temp, '
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      ')
+      
+    }
+    
+    temp <- paste0(temp, '
+        </tbody>
+      </table>
+    ')
+    
+    HTML(temp)
+    
+  })
+  
+  
+  
+  
+  
+  
+  
   
 })
