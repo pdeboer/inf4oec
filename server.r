@@ -30,14 +30,20 @@ round25 <- function (n)
   return (round(n / 0.25) * 0.25)
 }
 
+# returns a value rounded to halfs
+round5 <- function (n)
+{
+  return (round(n / 0.5) * 0.5)
+}
+
 # returns a vector of item difficulties, rounded to 2 digits
-itemDifficulties <- function (itemData, maxPoints)
+itemDiff <- function (itemData, maxPoints)
 {
   return (round(colSums(itemData) / (nrow(itemData) * maxPoints), 2))
 }
 
 # returns a vector of item total correlations, rounded to 2 digits
-itemTotalCorrelations <- function (itemData)
+itemTotalCorr <- function (itemData)
 {
   itemDataCorr <- apply(itemData, 2, function(x)
   {
@@ -67,38 +73,7 @@ shinyServer(function(input, output, session) {
   #observe ({ if (input$back7 != 0) updateTabsetPanel(session, "main", selected = "Schritt 7: Notengebung") })
   #observe ({ if (input$next0 != 0) updateTabsetPanel(session, "main", selected = "Information") })
   
-  # read the csv provided by the user to a data frame
-  rawData <- reactive ({
-    if (!is.null(input$inputFile))
-    {
-      read.csv(input$inputFile$datapath, header = input$header, sep = input$sep)
-    }
-  })
   
-  # OUTPUT: table of rawData
-  output$table_rawData <- renderDataTable ({
-    if (!is.null(rawData()))
-    {
-      rawData()
-    }
-  })
-  
-  # rawData for series A
-  rawData_a <- reactive ({
-    if (!is.null(rawData()))
-    {
-      split(rawData(), rawData()$Serie)$A
-    }
-  })
-  
-  # rawData for series B
-  rawData_b <- reactive ({
-    if (!is.null(rawData()))
-    {
-      split(rawData(), rawData()$Serie)$B
-    }
-  })
-#   
 #   # transpose rawData to a data frame with one column for the Matrikelnummer and a column for every item
 #   allData <- reactive ({
 #     if (!is.null(rawData()))
@@ -412,122 +387,6 @@ shinyServer(function(input, output, session) {
 #     }
 #   })
 #   
-#   #####
-#   #####
-#   #####
-#   #####
-#   #####
-#   #####
-#   #####
-#   #####
-#   #####
-#   #####
-#   
-#   # solution for series a
-#   solution_a <- reactive ({
-#     temp <- subset(subset(rawData_a(), Fragenummer == c(1:numberOfItems()) & Punkte == maxPointsValidatedVec()), !duplicated(Fragenummer))
-#     temp <- temp[order(temp$Fragenummer), ]
-#     temp <- subset(temp, select = -c(1, 2, 3, ncol(temp)))
-#     temp <- as.vector(t(temp))
-#   })
-#   
-#   # solution for series b
-#   solution_b <- reactive ({
-#     temp <- subset(subset(rawData_b(), Fragenummer == c(1:numberOfItems()) & Punkte == maxPointsValidatedVec()), !duplicated(Fragenummer))
-#     temp <- temp[order(temp$Fragenummer), ]
-#     temp <- subset(temp, select = -c(1, 2, 3, ncol(temp)))
-#     temp <- as.vector(t(temp))
-#   })
-#   
-#   # answers for series a
-#   answers_a <- reactive ({
-#     temp <- rawData_a()
-#     temp$pattern <- paste(temp$A, temp$B, temp$C, temp$D, temp$E)
-#     temp <- dcast(temp, matrikelhash ~ Fragenummer, value.var = "pattern")
-#     temp <- data.frame(apply(temp, 2, function(x) colsplit(x, " ", c("A", "B", "C", "D", "E"))))
-#     temp <- subset(temp, select = -c(max(itemAlternValidatedVec()) - 3, max(itemAlternValidatedVec()) - 2, max(itemAlternValidatedVec()) - 1, max(itemAlternValidatedVec())))
-#   })
-#   
-#   # answers for series b
-#   answers_b <- reactive ({
-#     temp <- rawData_b()
-#     temp$pattern <- paste(temp$A, temp$B, temp$C, temp$D, temp$E)
-#     temp <- dcast(temp, matrikelhash ~ Fragenummer, value.var = "pattern")
-#     temp <- data.frame(apply(temp, 2, function(x) colsplit(x, " ", c("A", "B", "C", "D", "E"))))
-#     temp <- subset(temp, select = -c(max(itemAlternValidatedVec()) - 3, max(itemAlternValidatedVec()) - 2, max(itemAlternValidatedVec()) - 1, max(itemAlternValidatedVec())))
-#   })
-#   
-#   # scores for series a
-#   scores_a <- reactive ({
-#     itemType <- rep(itemTypesValidatedVec(), each = max(itemAlternValidatedVec()))
-#     
-#     temp <- data.frame(t(apply(answers_a()[-1], 1, function(x) ifelse(x == solution_a(), 1, ifelse(itemType == "sc", 0, ifelse(itemType == "mc" & x == 0, 0, -1))))))
-#     
-#     # determine which columns to delete (based on the number of Alternatives for each item)
-#     indexes <- seq(5, ncol(temp), by = max(itemAlternValidatedVec()))
-#     indexes <- mapply(function(x, y) ifelse(x < max(itemAlternValidatedVec()), y - (max(itemAlternValidatedVec()) - x) + 1, NA), itemAlternValidatedVec(), indexes)
-#     indexes <- indexes[!is.na(indexes)]
-#     
-#     temp <- subset(temp, select = -(indexes))
-#   })
-#   
-#   # scores for series b
-#   scores_b <- reactive ({
-#     itemType <- rep(itemTypesValidatedVec(), each = max(itemAlternValidatedVec()))
-#     
-#     temp <- data.frame(t(apply(answers_b()[-1], 1, function(x) ifelse(x == solution_b(), 1, ifelse(itemType == "sc", 0, ifelse(itemType == "mc" & x == 0, 0, -1))))))
-#     
-#     # determine which columns to delete (based on the number of Alternatives for each item)
-#     indexes <- seq(5, ncol(temp), by = max(itemAlternValidatedVec()))
-#     indexes <- mapply(function(x, y) ifelse(x < max(itemAlternValidatedVec()), y - (max(itemAlternValidatedVec()) - x) + 1, NA), itemAlternValidatedVec(), indexes)
-#     indexes <- indexes[!is.na(indexes)]
-#     
-#     temp <- subset(temp, select = -(indexes))
-#   })
-#   
-#   # points for series a
-#   points_a <- reactive({
-#     itemMaxScores <- rep(maxPointsValidatedVec(), each = max(itemAlternValidatedVec()))
-#     itemType <- rep(itemTypesValidatedVec(), each = max(itemAlternValidatedVec()))
-#     
-#     # determine which columns to delete (based on the number of Alternatives for each item)
-#     indexes <- seq(5, 160, by = max(itemAlternValidatedVec()))
-#     indexes <- mapply(function(x, y) ifelse(x < max(itemAlternValidatedVec()), y - (max(itemAlternValidatedVec()) - x) + 1, NA), itemAlternValidatedVec(), indexes)
-#     indexes <- indexes[!is.na(indexes)]
-#     
-#     pointsreachable <- ifelse(itemType == "mc", itemMaxScores/4, itemMaxScores * solution_a())
-#     pointsreachable <- pointsreachable[-indexes]
-#     
-#     points_received <- data.frame(mapply(`*`, scores_a(), pointsreachable))
-#   })
-#   
-#   # points for series b
-#   points_b <- reactive({
-#     itemMaxScores <- rep(maxPointsValidatedVec(), each = max(itemAlternValidatedVec()))
-#     itemType <- rep(itemTypesValidatedVec(), each = max(itemAlternValidatedVec()))
-#     
-#     # determine which columns to delete (based on the number of Alternatives for each item)
-#     indexes <- seq(5, ncol(160), by = max(itemAlternValidatedVec()))
-#     indexes <- mapply(function(x, y) ifelse(x < max(itemAlternValidatedVec()), y - (max(itemAlternValidatedVec()) - x) + 1, NA), itemAlternValidatedVec(), indexes)
-#     indexes <- indexes[!is.na(indexes)]
-#     
-#     pointsreachable <- ifelse(itemType == "mc", itemMaxScores/4, itemMaxScores * solution_b())
-#     pointsreachable <- pointsreachable[-indexes]
-#     
-#     points_received <- data.frame(mapply(`*`, scores_b(), pointsreachable))
-#   })
-#   
-#   #####
-#   #####
-#   #####
-#   #####
-#   #####
-#   #####
-#   #####
-#   #####
-#   #####
-#   #####
-#   
 #   # two item statistics: item difficulty and item total correlation
 #   itemStats <- reactive ({
 #     if (!is.null(itemData()) && !is.null(maxPointsValidatedVec()))
@@ -569,46 +428,6 @@ shinyServer(function(input, output, session) {
 #       numericInput("itemCutoffInput", "Legen Sie den Mindestwert f??r die Trennsch??rfe fest.", min=-1, max=1, step=0.01, value=0)
 #     }
 #   })
-#   
-#   
-#   
-#   
-#   
-#   
-#   
-#   
-#   
-#   
-#   
-#   
-#   
-#   
-#   
-#   
-#   
-#   for (i in 1:4)
-#   {
-#     output$i <- renderPlot ({
-#       cars <- c(1, 3, 6, 4, 9)
-#       plot(cars)
-#     })
-#   }
-#   
-#   output$a_out <- renderPrint({
-#     res <- lapply(1:5, function(i) input[[paste0('a', i)]])
-#     str(setNames(res, paste0('a', 1:5)))
-#   })
-#   
-#   lapply(1:10, function(i) {
-#     output[[paste0('b', i)]] <- renderUI({
-#       strong(paste0('Hi, this is output B#', i))
-#     })
-#   })
-#   
-#   
-#   
-#   
-#   
 #   
 #   output$itemStatsLayout <- renderUI ({
 #     
@@ -998,11 +817,28 @@ shinyServer(function(input, output, session) {
   # NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW
   # NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW
   
-  # read raw (= original) data
+  # read the csv provided by the user to a data frame
   rawData <- reactive ({
     if (!is.null(input$inputFile))
     {
-      read.csv(input$inputFile$datapath, header = input$header, sep = input$sep, quote = input$quote, encoding = "UTF-8")
+      temp <- read.csv(input$inputFile$datapath, header = input$header, sep = input$sep)
+      temp <- temp[ , ]
+    }
+  })
+  
+  # rawData for series A
+  rawData_a <- reactive ({
+    if (!is.null(rawData()))
+    {
+      split(rawData(), rawData()$Serie)$A
+    }
+  })
+  
+  # rawData for series B
+  rawData_b <- reactive ({
+    if (!is.null(rawData()))
+    {
+      split(rawData(), rawData()$Serie)$B
     }
   })
   
@@ -1106,7 +942,7 @@ shinyServer(function(input, output, session) {
       temp <- list()
       for (i in 1:numberOfItems())
       {
-        temp[[i]] <- rawData()[rawData()$Serie == 'A' & rawData()$Fragenummer == i & rawData()$Punkte == maxPointsGuess()[i], 4:(3 + numberOfAlternatives()[i]), ][1, ]
+        temp[[i]] <- rawData()[rawData()$Serie == 'A' & rawData()$Fragenummer == i & rawData()$Punkte == maxPointsGuess()[i], 4:8, ][1, ]
       }
       temp
     }
@@ -1114,30 +950,28 @@ shinyServer(function(input, output, session) {
   
   # OUTPUT: Table to determine all item types, solutions etc.
   output$validationTable <- renderUI ({
-    temp <- '
+    temp <- paste0('
       <table class="table table-striped table-hover">
         <thead>
           <tr>
             <th>
-              Item
+              Item / Subitem
             </th>
             <th>
               Type / Solution
             </th>
             <th>
-              Corresponding (Series B)
-            </th>
-            <th>
-              Points
+              Points (', sum(maxPointsGuess()), ') / Corresponding
             </th>
           </tr>
         </thead>
-        <tbody>'
+        <tbody>
+    ')
     
     for (i in 1:numberOfItems())
     {
       temp <- paste0(temp, '
-        <tr>
+        <tr height = "80px">
           <td>
             ', i, '
           </td>
@@ -1145,35 +979,27 @@ shinyServer(function(input, output, session) {
             ', itemTypes()[i], '
           </td>
           <td>
-            // to do ...
-          </td>
-          <td>
-            <input id="maxPoints', i, '" type="number" class="form-control" value="', maxPointsGuess()[i], '" min="1" step = "1">
+            ', maxPointsGuess()[i], '
           </td>
         </tr>
       ')
       
-      if (itemTypes()[i] == "Single Choice")
+      for (j in 1:numberOfAlternatives()[i])
       {
-        for (j in 1:numberOfAlternatives()[i])
-        {
-          temp <- paste0(temp, '
-            <tr style = "background: white; font-weight: lighter;">
-              <td>
-                ', i, '
-              </td>
-              <td>
-                ', solutionGuess()[[i]][j], '
-              </td>
-              <td>
-              </td>
-              <td>
-              </td>
-            </tr>
-          ')
-        }
+        temp <- paste0(temp, '
+          <tr style = "font-weight: lighter">
+            <td>
+              ', i, '.', j, '
+            </td>
+            <td>
+              ', solutionGuess()[[i]][j], '
+            </td>
+            <td>
+              <input id="corresponding', i, j, '" type="number" class="form-control" value="', j, '" min="1" max="', numberOfAlternatives()[i], '" step = "1">
+            </td>
+          </tr>
+        ')
       }
-      
     }
     
     temp <- paste0(temp, '
@@ -1182,7 +1008,395 @@ shinyServer(function(input, output, session) {
     ')
     
     HTML(temp)
-    
   })
+  
+  # corresponding subitems of series B
+  corresponding <- reactive ({
+    temp <- c()
+    for (i in 1:numberOfItems())
+    {
+      for (j in 1:max(numberOfAlternatives()))
+      {
+        if (!is.null(eval(parse(text = paste0('input$corresponding', i, j)))))
+        {
+          temp <- c(temp, eval(parse(text = paste0('input$corresponding', i, j))))
+        }
+        else
+        {
+          temp <- c(temp, j)
+        }
+      }
+    }
+    temp
+  })
+  
+  # detailed data of all students (series B is reordered)
+  allData <- reactive ({
+    
+    # prepare data of series A
+    tempA <- rawData_a()
+    tempA$pattern <- paste(tempA$A, tempA$B, tempA$C, tempA$D, tempA$E)
+    tempA <- dcast(tempA, matrikelhash ~ Fragenummer, value.var = "pattern")
+    tempA <- data.frame(apply(tempA, 2, function(x) colsplit(x, " ", 1:max(numberOfAlternatives()))))
+    tempAnames <- tempA[ , 1]
+    tempA <- tempA[ , -(1:5)]
+    
+    # prepare data of series B
+    tempB <- rawData_b()
+    tempB$pattern <- paste(tempB$A, tempB$B, tempB$C, tempB$D, tempB$E)
+    tempB <- dcast(tempB, matrikelhash ~ Fragenummer, value.var = "pattern")
+    tempB <- data.frame(apply(tempB, 2, function(x) colsplit(x, " ", c("A", "B", "C", "D", "E"))))
+    tempBnames <- tempB[ , 1]
+    tempB <- tempB[ , -(1:5)]
+    
+    # reorder data of series B
+    temp1 <- list()
+    for (i in seq(1, ncol(tempB), max(numberOfAlternatives())))
+    {
+      temp2 <- tempB[ , i:(i + 4)]
+      temp2 <- temp2[ , c(corresponding()[i:(i + 4)])]
+      temp1 <- c(temp1, temp2)
+    }
+    tempB <- as.data.frame(temp1)
+    
+    colnames(tempA) <- c(1:160)
+    colnames(tempB) <- c(1:160)
+    
+    names <- as.character(append(tempAnames, tempBnames))
+    data  <- rbind.data.frame(tempA, tempB)
+    
+    all <- data.frame(names, data)
+    
+    all <- all[rowSums(all[ , 2:ncol(all)]) != 0, ]
+  })
+  
+  # scores for all students
+  scores <- reactive ({
+    temp <- subset(allData(), select = -1)
+    
+    solution <- unlist(solutionGuess())
+    itemType <- rep(itemTypes(), each = 5)
+    
+    scores <- data.frame(t(apply(temp, 1, function(x) ifelse(x == solution, 1, ifelse(itemType == "Multiple Choice" & x == 0, 0, -1)))))
+  })
+  
+  output$table_scores <- renderDataTable ({
+    scores()
+  })
+  
+  graphics <- reactive ({
+    correct   <- colSums(scores()==1)
+    no_answer <- colSums(scores()==0)
+    wrong     <- colSums(scores()==-1)
+    yess <- rbind(correct, wrong, no_answer)
+  })
+  
+  for (i in 1:160)
+  {
+    local ({
+      my_i <- i
+      plotname <- paste0("plot", my_i)
+      output[[plotname]] <- renderPlot({
+        par(mar = c(0, 0, 0, 0))
+        now <- barplot(as.matrix(graphics()[ , my_i]), col = c("Green", "Red", "Gray"), horiz = TRUE, axes = FALSE, main = NULL, border = FALSE)
+        text(0, now, graphics()[1 , my_i], cex = 1, pos = 4)
+        text(graphics()[1 , my_i], now, graphics()[2 , my_i], cex = 1, pos = 4)
+        if (graphics()[3 , my_i] > 0)
+        {
+          text(graphics()[1 , my_i] + graphics()[2 , my_i], now, graphics()[3 , my_i], cex = 1, pos = 4)
+        }
+        
+        dev.off()
+      })
+    })
+  }
+  
+  pointsReachable <- reactive ({
+    itemMaxScores <- rep(maxPointsGuess(), each = 5)
+    nrOfAlternatives <- rep(numberOfAlternatives(), each = 5)
+    
+    pointsreachable <- c()
+    for (i in seq(1, 160, 5))
+    {
+      for (j in 1:5)
+      {
+        if (nrOfAlternatives[i] < j)
+        {
+          pointsreachable <- c(pointsreachable, 0)
+        }
+        else
+        {
+          pointsreachable <- c(pointsreachable, itemMaxScores[i] / nrOfAlternatives[i])
+        }
+      }
+    }
+    pointsreachable
+  })
+  
+  points_received <- reactive({
+    data.frame(mapply(`*`, scores(), pointsReachable()))
+  })
+
+  subitemDiff <- reactive ({
+    round(colSums(scores() == 1) / 715, 2)
+  })
+  
+  subitemTotal <- reactive ({
+    temp <- itemTotalCorr(points_received())
+    temp <- ifelse(is.nan(temp), NA, temp)
+  })
+  
+  
+  
+  
+  #OLD STUFF need?
+  
+  # transpose rawData to a data frame with one column for the Matrikelnummer and a column for every item
+  itemData <- reactive ({
+    if (!is.null(rawData()))
+    {
+      temp <- dcast(rawData(), rawData()$matrikelhash ~ rawData()$Fragenummer, value.var = "Punkte")
+      temp <- temp[-1]
+    }
+  })
+  
+  # difficulty for each item
+  itemDifficulties <- reactive ({
+    if (!is.null(itemData()) & !is.null(maxPointsGuess()))
+    {
+      itemDiff(itemData(), maxPointsGuess())
+    }
+  })
+  
+  # item total correlation for each item
+  itemTotalCorrelations <- reactive ({
+    if (!is.null(itemData()) & !is.null(maxPointsGuess()))
+    {
+      itemTotalCorr(itemData())
+    }
+  })
+  
+  #OLD STUFF need? END
+  
+  
+  
+  
+  
+  
+  
+  
+  # OUTPUT: Table to show item statistics and select/deselect items
+  output$statisticsTable <- renderUI ({
+    
+    rep <- c(1:160)
+    
+    temp <- '
+      <table class="table table-striped table-hover">
+        <thead>
+          <tr>
+            <th width = "15%">
+              #
+            </th>
+            <th>
+              Type / Answers
+            </th>
+            <th width = "15%">
+              Difficulty
+            </th>
+            <th width = "15%">
+              Item Total Correlation
+            </th>
+            <th width = "15%">
+              
+            </th>
+          </tr>
+        </thead>
+        <tbody>'
+    
+    for (i in 1:numberOfItems())
+    {
+      temp <- paste0(temp, '
+        <tr height = "100px">
+          <td style = "vertical-align: middle">
+            ', i, '
+          </td>
+          <td style = "vertical-align: middle">
+            ', itemTypes()[i], '
+          </td>
+          <td style = "vertical-align: middle">
+            ', itemDifficulties()[i], '
+          </td>
+          <td style = "vertical-align: middle">
+            ', itemTotalCorrelations()[i], '
+          </td>
+          <td align = "center" style = "vertical-align: middle">
+            <input id="inOrOutItem', i, '" type="checkbox" checked/>
+          </td>
+        </tr>
+      ')
+      
+      for (j in 1:5)
+      {
+        temp <- paste0(temp, '
+          <tr style = "background: white; font-weight: lighter;">
+            <td style = "vertical-align: middle">
+              ', i, '.', j, '
+            </td>
+            <td style = "vertical-align: middle">
+              <div id="plot', rep[1], '" class="shiny-plot-output" style="width: 600px; height:50px"></div>
+            </td>
+        ')
+        if (itemTypes()[i] == "Single Choice")
+        {
+          temp <- paste0(temp, '
+            <td style = "vertical-align: middle">
+              ', subitemDiff()[rep[1]], '
+            </td>
+            <td>
+              
+            </td>
+            <td align = "center" style = "vertical-align: middle">
+              <input id="inOrOut', rep[1],'" type="checkbox" checked/>
+            </td>
+          </tr>
+          ')
+        }
+        else
+        {
+          temp <- paste0(temp, '
+            <td style = "vertical-align: middle">
+              ', subitemDiff()[rep[1]], '
+            </td>
+            <td style = "vertical-align: middle">
+              ', subitemTotal()[rep[1]], '
+            </td>
+            <td align = "center" style = "vertical-align: middle">
+              <input id="inOrOut', rep[1],'" type="checkbox" checked/>
+            </td>
+          </tr>
+          ')
+        }
+        rep <- rep[-1]
+      }
+    }
+    
+    temp <- paste0(temp, '
+        </tbody>
+      </table>
+    ')
+    
+    HTML(temp)
+  })
+  
+  
+  
+  
+  for (i in 1:32)
+  {
+    local ({
+      my_i <- i
+      name <- paste0("inOrOutItem", i)
+      rep <- seq(1, 160, 5)
+      
+      observe ({
+        if (!is.null(input[[name]]))
+        {
+          if (!input[[name]])
+          {
+            for (j in rep[my_i]:(rep[my_i] + 4))
+            {
+              updateCheckboxInput(session, paste0("inOrOut", j), value = FALSE)
+            }
+          }
+          else
+          {
+            for (j in rep[my_i]:(rep[my_i] + 4))
+            {
+              updateCheckboxInput(session, paste0("inOrOut", j), value = TRUE)
+            }
+          }
+        }
+      })
+    })
+  }
+  
+  outItems <- reactive ({
+    if (!is.null(numberOfItems()) && !is.null(input$inOrOut1))
+    {
+      outItems <- c()
+      for (i in 1:160)
+      {
+        if (!is.null(eval(parse(text = paste0("input$inOrOut", i)))))
+        {
+          if (!eval(parse(text = paste0("input$inOrOut", i))))
+          {
+            outItems <- c(outItems, i)
+          }
+        }
+      }
+      
+      rep <- seq(1, 160, 5)
+      
+      for (i in 1:32)
+      {
+        test <- seq(rep[i], (rep[i] + 4))
+        
+        if (all(test %in% outItems))
+        {
+          updateCheckboxInput(session, paste0("inOrOutItem", i), value = FALSE)
+        }
+        else if (all(!(test %in% outItems)))
+        {
+          updateCheckboxInput(session, paste0("inOrOutItem", i), value = TRUE)
+        }
+      }
+      
+      outItems
+    }
+  })
+  
+  
+  updatedPoints <- reactive ({
+    temp <- points_received()
+    for (i in 1:length(outItems()))
+    {
+      temp[ , outItems()[i]] <- pointsReachable()[i]
+    }
+    temp
+  })
+  
+  
+
+  
+  
+  output$table_updated <- renderDataTable ({
+    updatedPoints()
+  })
+  
+  
+
+  
+  
+  finalPoints <- reactive ({
+    itemMaxScores <- rep(maxPointsGuess(), each = 5)
+    nrOfAlternatives <- rep(numberOfAlternatives(), each = 5)
+    
+    pointsDef <- c()
+    for (i in seq(1, 160, 5))
+    {
+      pointsDef <- c(pointsDef, rowSums(updatedPoints()[ , i:(i + 4)]))
+    }
+    
+    out <- matrix(pointsDef, ncol = 32, nrow = 715)
+    
+    out <- data.frame(out)
+    out
+  })
+  
+  
+  output$oh2 <- renderDataTable ({
+    finalPoints()
+  })
+  
   
 })

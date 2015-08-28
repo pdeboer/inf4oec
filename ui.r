@@ -22,11 +22,22 @@ shinyUI(fluidPage(
     tabPanel('Step 2: Validation',
       h1('Validation'),
       p('Make sure all the data below is correct.'),
+      tags$hr(),
       htmlOutput('validationTable')
     ),
     
     tabPanel('Step 3: Item Statistics',
-      h1('Item Statistics')
+      h1('Item Statistics'),
+      p('These statistics are meant to help you ...'),
+      tags$hr(),
+      textOutput("weg"),
+      htmlOutput('statisticsTable')
+    ),
+    
+    tabPanel('Step 5: Points received',
+             h1('fff'),
+             tags$hr(),
+             dataTableOutput("oh2")
     )
     
   )
