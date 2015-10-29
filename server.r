@@ -818,43 +818,42 @@ shinyServer(function(input, output, session) {
   # NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW
   
   # read the csv provided by the user to a data frame
-  rawData <- reactive ({
+  data <- reactive ({
     if (!is.null(input$inputFile))
     {
-      temp <- read.csv(input$inputFile$datapath, header = input$header, sep = input$sep)
-      temp <- temp[ , ]
+      read.csv(input$inputFile$datapath)
     }
   })
   
   # rawData for series A
-  rawData_a <- reactive ({
-    if (!is.null(rawData()))
+  dataA <- reactive ({
+    if (!is.null(data()))
     {
-      split(rawData(), rawData()$Serie)$A
+      split(data(), data()$Serie)$A
     }
   })
   
   # rawData for series B
-  rawData_b <- reactive ({
-    if (!is.null(rawData()))
+  dataB <- reactive ({
+    if (!is.null(data()))
     {
-      split(rawData(), rawData()$Serie)$B
+      split(data(), data()$Serie)$B
     }
   })
   
   # number of items
   numberOfItems <- reactive ({
-    if (!is.null(rawData()))
+    if (!is.null(data()))
     {
-      max(rawData()$Fragenummer)
+      max(data()$Fragennummer)
     }
   })
   
   # number of students
   numberOfStudents <- reactive ({
-    if (!is.null(rawData()) & !is.null(numberOfItems()))
+    if (!is.null(data()) & !is.null(numberOfItems()))
     {
-      nrow(rawData()) / numberOfItems()
+      nrow(data()) %/% numberOfItems()
     }
   })
   

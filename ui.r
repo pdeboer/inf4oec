@@ -7,19 +7,15 @@ shinyUI(fluidPage(
   
   navlistPanel('inf4oec', widths = c(2, 10),
     
-    tabPanel('Step 1: Data Upload',
-      h1('Data Upload'),
-      p('Upload the data you want to analyse. It needs to have the following columns: "Matrikelnummer", "Serie", "Fragenummer", alternatives ("A", "B", "C" etc.) and "Punkte".'),
-      uiOutput("confirmation"),
+    tabPanel('Upload',
+      h1('Upload'),
+      p('Upload the data you want to analyse. It needs to have the following columns: "Matrikelnummer", "Serie", "Fragennummer", "A", "B", "C", "D", "E" and "Punkte".'),
       tags$hr(),
-      fileInput('inputFile', '', accept = c('text/csv', 'text/comma-separated-values, text/plain', '.csv')),
-      checkboxInput('header', 'Header', TRUE),
-      tags$br(),
-      radioButtons('sep', tags$b('Separator'), c(Comma = ',', Semicolon = ';', Tab = '\t'), ','),
-      tags$hr()
+      fileInput('inputFile', '', accept = 'text/csv'),
+      uiOutput("confirmation")
     ),
     
-    tabPanel('Step 2: Validation',
+    tabPanel('Validation',
       h1('Validation'),
       p('Make sure all the data below is correct.'),
       tags$hr(),
@@ -35,7 +31,7 @@ shinyUI(fluidPage(
     ),
     
     tabPanel('Step 5: Points received',
-             h1('fff'),
+    h1('fff'),
              tags$hr(),
              dataTableOutput("oh2")
     )
