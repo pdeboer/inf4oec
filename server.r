@@ -817,27 +817,11 @@ shinyServer(function(input, output, session) {
   # NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW
   # NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW
   
-  # read the csv provided by the user to a data frame
+  # read csv
   data <- reactive ({
     if (!is.null(input$inputFile))
     {
       read.csv(input$inputFile$datapath)
-    }
-  })
-  
-  # rawData for series A
-  dataA <- reactive ({
-    if (!is.null(data()))
-    {
-      split(data(), data()$Serie)$A
-    }
-  })
-  
-  # rawData for series B
-  dataB <- reactive ({
-    if (!is.null(data()))
-    {
-      split(data(), data()$Serie)$B
     }
   })
   
@@ -876,76 +860,60 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  # number of alternatives for each item
-  numberOfAlternatives <- reactive ({
-    if (!is.null(rawData()) & !is.null(numberOfItems()))
+  # data of series A
+  dataA <- reactive ({
+    if (!is.null(data()))
     {
-      temp <- c()
-      for (i in 1:numberOfItems())
-      {
-        for (j in ncol(rawData()) - 1:4)
-        {
-          if (!all(is.na(match(c(-1, 1), rawData()[rawData()$Fragenummer == i, j]))))
-          {
-            temp <- c(temp, j - 3)
-            break
-          }
-        }
-      }
-      temp
+      split(data(), data()$Serie)$A
     }
   })
   
-  # item type for each item
-  itemTypes <- reactive ({
-    if (!is.null(rawData()) & !is.null(numberOfItems()) & !is.null(numberOfAlternatives()))
+  # data of series B
+  dataB <- reactive ({
+    if (!is.null(data()))
     {
-      temp <- c()
-      for (i in 1:numberOfItems())
-      {
-        for (j in 1:numberOfAlternatives()[i])
-        {
-          if (!is.na(match(-1, rawData()[rawData()$Fragenummer == i, 3 + j])))
-          {
-            temp <- c(temp, "Multiple Choice")
-            break
-          }
-          else
-          {
-            temp <- c(temp, "Single Choice")
-            break
-          }
-        }
-      }
-      temp
+      split(data(), data()$Serie)$B
     }
   })
   
-  # guessed max points for each item
-  maxPointsGuess <- reactive ({
-    if (!is.null(rawData()) & !is.null(numberOfItems()))
+  # guess item types
+  itemTypesGuess <- reactive (
+    if (!is.null(data()))
     {
-      temp <- c()
-      for (i in 1:numberOfItems())
-      {
-        temp <- c(temp, max(rawData()[rawData()$Fragenummer == i, 9]))
-      }
-      temp
+      rep(ifelse(rowSums(aggregate(. ~ Fragennummer, data(), function(x) -1 %in% x)[4:8]) > 0, "Multiple Choice", "Single Choice"), each = 5)
     }
-  })
+  )
   
-  # guessed solution for each item (series A)
-  solutionGuess <- reactive ({
-    if (!is.null(rawData()) & !is.null(numberOfItems()) & !is.null(maxPointsGuess()) & !is.null(numberOfAlternatives()))
+  # guess max. points/item
+  itemPointsGuess <- reactive (
+    if (!is.null(data()))
     {
-      temp <- list()
-      for (i in 1:numberOfItems())
-      {
-        temp[[i]] <- rawData()[rawData()$Serie == 'A' & rawData()$Fragenummer == i & rawData()$Punkte == maxPointsGuess()[i], 4:8, ][1, ]
-      }
-      temp
+      rep(aggregate(Punkte ~ Fragennummer, data(), max)$Punkte, each = 5)
     }
-  })
+  )
+  
+  # guess nr. of alternatives for each item
+  itemAlternativesGuess <- reactive (
+    if (!is.null(data()))
+    {
+      rep(rowSums(aggregate(. ~ Fragennummer, data(), function(x) -1 %in% x || 1 %in% x)[4:8]), each = 5)
+    }
+  )
+  
+  # guess solution of series A
+  solutionGuess <- reactive (
+    if (!is.null(dataA()))
+    {
+      solution <- unique(merge(dataA(), aggregate(Punkte ~ Fragennummer, dataA(), max))[c(1, 5:9)])
+      as.vector(t(solution[order(solution$Fragennummer), -1]))
+    }
+  )
+  
+  
+  
+  
+  
+  output$test <- renderText(solutionGuess())
   
   # OUTPUT: Table to determine all item types, solutions etc.
   output$validationTable <- renderUI ({
@@ -1396,6 +1364,7 @@ shinyServer(function(input, output, session) {
   output$oh2 <- renderDataTable ({
     finalPoints()
   })
+  
   
   
 })
