@@ -1,6 +1,5 @@
-setwd("~/")
-
 library(shiny)
+library(DT)
 library(reshape2)
 library(knitr)
 library(xtable)
@@ -54,38 +53,6 @@ itemTotalCorr <- function (itemData)
 
 shinyServer(function(input, output, session) {
   
-  # observe all the navigation buttons and change the tab on click
-  #observe ({ if (input$next1 != 0) updateTabsetPanel(session, "main", selected = "Schritt 1: Daten einlesen") })
-  #observe ({ if (input$back0 != 0) updateTabsetPanel(session, "main", selected = "Information") })
-  #observe ({ if (input$next2 != 0) updateTabsetPanel(session, "main", selected = "Schritt 2: Daten transponieren") })
-  #observe ({ if (input$back1 != 0) updateTabsetPanel(session, "main", selected = "Schritt 1: Daten einlesen") })
-  #observe ({ if (input$next3 != 0) updateTabsetPanel(session, "main", selected = "Schritt 3: Maximal erreichbare Punkte") })
-  #observe ({ if (input$back2 != 0) updateTabsetPanel(session, "main", selected = "Schritt 2: Daten transponieren") })
-  #observe ({ if (input$next4 != 0) updateTabsetPanel(session, "main", selected = "Schritt 4: Leere Pr??fungen") })
-  #observe ({ if (input$back3 != 0) updateTabsetPanel(session, "main", selected = "Schritt 3: Maximal erreichbare Punkte") })
-  #observe ({ if (input$next5 != 0) updateTabsetPanel(session, "main", selected = "Schritt 5: Rohwertverteilung") })
-  #observe ({ if (input$back4 != 0) updateTabsetPanel(session, "main", selected = "Schritt 4: Leere Pr??fungen") })
-  #observe ({ if (input$next6 != 0) updateTabsetPanel(session, "main", selected = "Schritt 6: Itemkennwerte") })
-  #observe ({ if (input$back5 != 0) updateTabsetPanel(session, "main", selected = "Schritt 5: Rohwertverteilung") })
-  #observe ({ if (input$next7 != 0) updateTabsetPanel(session, "main", selected = "Schritt 7: Notengebung") })
-  #observe ({ if (input$back6 != 0) updateTabsetPanel(session, "main", selected = "Schritt 6: Itemkennwerte") })
-  #observe ({ if (input$next8 != 0) updateTabsetPanel(session, "main", selected = "Schritt 8: Bericht") })
-  #observe ({ if (input$back7 != 0) updateTabsetPanel(session, "main", selected = "Schritt 7: Notengebung") })
-  #observe ({ if (input$next0 != 0) updateTabsetPanel(session, "main", selected = "Information") })
-  
-  
-#   # transpose rawData to a data frame with one column for the Matrikelnummer and a column for every item
-#   allData <- reactive ({
-#     if (!is.null(rawData()))
-#     {
-#       temp <- dcast(rawData(), eval(parse(text = colnames(rawData())[1])) ~ eval(parse(text = colnames(rawData())[3])), value.var = colnames(rawData())[ncol(rawData())])
-#       if (ncol(temp) > 2)
-#       {
-#         temp
-#       }
-#     }
-#   })
-#   
 #   # number of students to take the exam
 #   numberOfStudents <- reactive ({
 #     if (!is.null(allData()))
@@ -150,7 +117,7 @@ shinyServer(function(input, output, session) {
 #   })
 #   
 #   # vector with a guess (based on the input data) about type for each item (sc or mc)
-#   itemTypesGuessVec <- reactive ({
+#   itemTypesVec <- reactive ({
 #     if (!is.null(rawData()))
 #     {
 #       temp <- dcast(rawData(), eval(parse(text = colnames(rawData())[1])) ~ eval(parse(text = colnames(rawData())[3])), value.var = colnames(rawData())[ncol(rawData()) - 1])
@@ -192,7 +159,7 @@ shinyServer(function(input, output, session) {
 #   
 #   # OUTPUT: list of numeric inputs, default values are the guessed points for each question
 #   output$numericInputs <- renderUI ({
-#     if (!is.null(numberOfItems()) && !is.null(maxPointsGuessVec()) && !is.null(itemTypesGuessVec()))
+#     if (!is.null(numberOfItems()) && !is.null(maxPointsGuessVec()) && !is.null(itemTypesVec()))
 #     {
 #       numericInputs <- list()
 #       numericInputs[[1]] <- ('
@@ -243,7 +210,7 @@ shinyServer(function(input, output, session) {
 #             <div class="form-group shiny-input-container">
 #               <div>
 #                 <select id="type', i, '">',
-#                   itemTypesGuessVec()[[i]],'
+#                   itemTypesVec()[[i]],'
 #                 </select>
 #                 <script type="application/json" data-for="type', i, '" data-nonempty="">{}</script>
 #               </div>
@@ -877,95 +844,223 @@ shinyServer(function(input, output, session) {
   })
   
   # guess item types
-  itemTypesGuess <- reactive (
+  itemTypes <- reactive ({
     if (!is.null(data()))
     {
       rep(ifelse(rowSums(aggregate(. ~ Fragennummer, data(), function(x) -1 %in% x)[4:8]) > 0, "Multiple Choice", "Single Choice"), each = 5)
     }
-  )
+  })
   
   # guess max. points/item
-  itemPointsGuess <- reactive (
+  itemPointsGuess <- reactive ({
     if (!is.null(data()))
     {
       rep(aggregate(Punkte ~ Fragennummer, data(), max)$Punkte, each = 5)
     }
-  )
+  })
   
   # guess nr. of alternatives for each item
-  itemAlternativesGuess <- reactive (
+  itemAlternatives <- reactive ({
     if (!is.null(data()))
     {
       rep(rowSums(aggregate(. ~ Fragennummer, data(), function(x) -1 %in% x || 1 %in% x)[4:8]), each = 5)
     }
-  )
+  })
   
   # guess solution of series A
-  solutionGuess <- reactive (
+  solutionGuess <- reactive ({
     if (!is.null(dataA()))
     {
       solution <- unique(merge(dataA(), aggregate(Punkte ~ Fragennummer, dataA(), max))[c(1, 5:9)])
       as.vector(t(solution[order(solution$Fragennummer), -1]))
     }
-  )
+  })
   
-  
-  
-  
-  
-  output$test <- renderText(solutionGuess())
-  
-  # OUTPUT: Table to determine all item types, solutions etc.
+  # OUTPUT: table to validate guessed information !!!!!!!!!!
   output$validationTable <- renderUI ({
+    
+    index <- seq(1, 160, 5)
+    
     temp <- paste0('
-      <table class="table table-striped table-hover">
+      <table class="table">
         <thead>
           <tr>
-            <th>
-              Item / Subitem
+            <th width="20%">
+              Item
             </th>
-            <th>
-              Type / Solution
+            <th width="40%">
+              Type / Solution (Series A)
             </th>
-            <th>
-              Points (', sum(maxPointsGuess()), ') / Corresponding
+            <th width="40%">
+              Points (', sum(itemPointsGuess()[index]), ') / Corresponding (Series B)
             </th>
           </tr>
         </thead>
-        <tbody>
-    ')
+        <tbody>')
     
     for (i in 1:numberOfItems())
     {
       temp <- paste0(temp, '
-        <tr height = "80px">
-          <td>
+        <tr style = "background: #F5F5F5">
+          <td style="vertical-align: middle">
             ', i, '
           </td>
-          <td>
-            ', itemTypes()[i], '
+          <td style="vertical-align: middle">
+            ', itemTypes()[index[i]], '
           </td>
-          <td>
-            ', maxPointsGuess()[i], '
+          <td style="vertical-align: middle">
+            <div class="form-group shiny-input-container">
+              <input id="itemPoints', i,'" type="number" class="form-control" value="', itemPointsGuess()[index[i]], '"/>
+            </div>
           </td>
-        </tr>
-      ')
+        </tr>')
       
-      for (j in 1:numberOfAlternatives()[i])
+      for (j in 1:itemAlternatives()[index[i]])
       {
-        temp <- paste0(temp, '
-          <tr style = "font-weight: lighter">
-            <td>
-              ', i, '.', j, '
-            </td>
-            <td>
-              ', solutionGuess()[[i]][j], '
-            </td>
-            <td>
-              <input id="corresponding', i, j, '" type="number" class="form-control" value="', j, '" min="1" max="', numberOfAlternatives()[i], '" step = "1">
-            </td>
-          </tr>
-        ')
+        if (itemTypes()[index[i]] == "Single Choice")
+        {
+          temp <- paste0(temp, '
+            <tr style = "background: white; font-weight: lighter;">
+              <td style="vertical-align: middle">
+                ', i, '.', j, '
+              </td>')
+          if (solutionGuess()[index[i] + j - 1] == 0)
+          {
+            temp <- paste0(temp, '
+              <td style="vertical-align: middle">
+
+                <div id="solution', index[i] + j - 1, '" class="form-group shiny-input-radiogroup shiny-input-container">
+                  <div class="shiny-options-group">
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="solution', index[i] + j - 1, '" value="0" checked="checked"/>
+                        <span>Incorrect</span>
+                      </label>
+                    </div>
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="solution', index[i] + j - 1, '" value="1"/>
+                        <span>Correct</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+              </td>
+
+              <td style="vertical-align: middle">
+                <div class="form-group shiny-input-container">
+                  <input id="corresponding', index[i] + j - 1, '" type="number" class="form-control" value="', j, '" min="1" max="', itemAlternatives()[index[i]], '"/>
+                </div>
+              </td>
+
+            </tr>')
+          }
+          else
+          {
+            temp <- paste0(temp, '
+              <td style="vertical-align: middle">
+
+                <div id="solution', index[i] + j - 1, '" class="form-group shiny-input-radiogroup shiny-input-container">
+                  <div class="shiny-options-group">
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="solution', index[i] + j - 1, '" value="0"/>
+                        <span>Incorrect</span>
+                      </label>
+                    </div>
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="solution', index[i] + j - 1, '" value="1" checked="checked"/>
+                        <span>Correct</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+              </td>
+
+              </td>
+              <td style="vertical-align: middle">
+                <div class="form-group shiny-input-container">
+                  <input id="corresponding', index[i] + j - 1, '" type="number" class="form-control" value="', j, '" min="1" max="', itemAlternatives()[index[i]], '"/>
+                </div>
+              </td>
+            </tr>')
+          }
+        }
+        else
+        {
+          temp <- paste0(temp, '
+            <tr style = "background: white; font-weight: lighter;">
+              <td style="vertical-align: middle">
+                ', i, '.', j, '
+              </td>')
+          if (solutionGuess()[index[i] + j - 1] == -1)
+          {
+            temp <- paste0(temp, '
+              <td style="vertical-align: middle">
+
+                <div id="solution', index[i] + j - 1, '" class="form-group shiny-input-radiogroup shiny-input-container">
+                  <div class="shiny-options-group">
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="solution', index[i] + j - 1, '" value="-1" checked="checked"/>
+                        <span>Incorrect</span>
+                      </label>
+                    </div>
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="solution', index[i] + j - 1, '" value="1"/>
+                        <span>Correct</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+              </td>
+
+              </td>
+              <td style="vertical-align: middle">
+                <div class="form-group shiny-input-container">
+                  <input id="corresponding', index[i] + j - 1, '" type="number" class="form-control" value="', j, '" min="1" max="', itemAlternatives()[index[i]], '"/>
+                </div>
+              </td>
+            </tr>')
+          }
+          else
+          {
+            temp <- paste0(temp, '
+              <td style="vertical-align: middle">
+
+                <div id="solution', index[i] + j - 1, '" class="form-group shiny-input-radiogroup shiny-input-container">
+                  <div class="shiny-options-group">
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="solution', index[i] + j - 1, '" value="-1"/>
+                        <span>Incorrect</span>
+                      </label>
+                    </div>
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="solution', index[i] + j - 1, '" value="1" checked="checked"/>
+                        <span>Correct</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+              </td>
+
+              </td>
+              <td style="vertical-align: middle">
+                <div class="form-group shiny-input-container">
+                  <input id="corresponding', index[i] + j - 1, '" type="number" class="form-control" value="', j, '" min="1" max="', itemAlternatives()[index[i]], '"/>
+                </div>
+              </td>
+            </tr>')
+          }
+        }
       }
     }
     
@@ -975,275 +1070,254 @@ shinyServer(function(input, output, session) {
     ')
     
     HTML(temp)
+    
   })
   
-  # corresponding subitems of series B
-  corresponding <- reactive ({
+  itemPoints <- reactive ({
     temp <- c()
     for (i in 1:numberOfItems())
     {
-      for (j in 1:max(numberOfAlternatives()))
+      temp <- c(temp, eval(parse(text = paste0('input$itemPoints', i))))
+    }
+    rep(temp, each = 5)
+  })
+  
+  solution <- reactive ({
+    temp <- c()
+    for (i in 1:(numberOfItems() * 5))
+    {
+      if (!is.null(eval(parse(text = paste0('input$solution', i)))))
       {
-        if (!is.null(eval(parse(text = paste0('input$corresponding', i, j)))))
+        temp <- c(temp, as.integer(eval(parse(text = paste0('input$solution', i)))))
+      }
+      else
+      {
+        temp <- c(temp, as.integer(0))
+      }
+    }
+    temp
+  })
+  
+  corresponding <- reactive ({
+    temp <- c()
+    index <- seq(1, numberOfItems() * 5, 5)
+    for (i in 1:numberOfItems())
+    {
+      for (j in 1:5)
+      {
+        if (!is.null(eval(parse(text = paste0('input$corresponding', index[i] + j - 1)))))
         {
-          temp <- c(temp, eval(parse(text = paste0('input$corresponding', i, j))))
+          temp <- c(temp, as.integer(index[i] + eval(parse(text = paste0('input$corresponding', index[i] + j - 1))) - 1))
         }
         else
         {
-          temp <- c(temp, j)
+          temp <- c(temp, as.integer(index[i] + j - 1))
         }
       }
     }
     temp
   })
   
-  # detailed data of all students (series B is reordered)
-  allData <- reactive ({
-    
-    # prepare data of series A
-    tempA <- rawData_a()
-    tempA$pattern <- paste(tempA$A, tempA$B, tempA$C, tempA$D, tempA$E)
-    tempA <- dcast(tempA, matrikelhash ~ Fragenummer, value.var = "pattern")
-    tempA <- data.frame(apply(tempA, 2, function(x) colsplit(x, " ", 1:max(numberOfAlternatives()))))
-    tempAnames <- tempA[ , 1]
-    tempA <- tempA[ , -(1:5)]
-    
-    # prepare data of series B
-    tempB <- rawData_b()
-    tempB$pattern <- paste(tempB$A, tempB$B, tempB$C, tempB$D, tempB$E)
-    tempB <- dcast(tempB, matrikelhash ~ Fragenummer, value.var = "pattern")
-    tempB <- data.frame(apply(tempB, 2, function(x) colsplit(x, " ", c("A", "B", "C", "D", "E"))))
-    tempBnames <- tempB[ , 1]
-    tempB <- tempB[ , -(1:5)]
-    
-    # reorder data of series B
-    temp1 <- list()
-    for (i in seq(1, ncol(tempB), max(numberOfAlternatives())))
+  itemData <- reactive ({
+    if (!is.null(data()))
     {
-      temp2 <- tempB[ , i:(i + 4)]
-      temp2 <- temp2[ , c(corresponding()[i:(i + 4)])]
-      temp1 <- c(temp1, temp2)
+      temp <- dcast(data(), data()$liebmannnr ~ data()$Fragennummer, value.var = "Punkte")[-1]
+      temp[rowSums(temp)!= 0, ]
     }
-    tempB <- as.data.frame(temp1)
-    
-    colnames(tempA) <- c(1:160)
-    colnames(tempB) <- c(1:160)
-    
-    names <- as.character(append(tempAnames, tempBnames))
-    data  <- rbind.data.frame(tempA, tempB)
-    
-    all <- data.frame(names, data)
-    
-    all <- all[rowSums(all[ , 2:ncol(all)]) != 0, ]
   })
   
-  # scores for all students
-  scores <- reactive ({
-    temp <- subset(allData(), select = -1)
+  # OUTPUT: histogram of raw scores
+  output$histogramRawScores <- renderPlot ({
+    totalPoints <- sum(itemPoints()) / 5
+    h <- hist(rowSums(itemData()), main="Distribution of raw scores", xlab="Points", ylab="Frequency", col = "lightblue", breaks = totalPoints/5, xlim=c(0, totalPoints), xaxt='n')
+    axis(1, at=seq(0, totalPoints, 5))
+    xfit <- seq(0, totalPoints, length=totalPoints)
+    yfit <- dnorm(xfit, mean=mean(rowSums(itemData())), sd=sd(rowSums(itemData())))
+    yfit <- yfit*diff(h$mids[1:2])*length(rowSums(itemData()))
+    lines(xfit, yfit)
+    abline(v = mean(rowSums(itemData())), col = "blue", lwd = 1)
+    abline(v = median(rowSums(itemData())), col = "orange", lwd = 1)
+    legend("topright", legend = c("Mean", "Median"), col = c("blue", "orange"), lwd=1)
+  })
+  
+  # OUTPUT: q-q plot of raw scores
+  output$qqRawScores <- renderPlot ({
+    qqnorm(rowSums(itemData()), main="Normal Q-Q plot", xlab="Expected Quantiles", ylab="Observed Quantiles")
+    qqline(rowSums(itemData()), col=2)
+  })
+  
+  # reorder data
+  dataReordered <- reactive ({
+    # reshape A
+    tempA <- dataA()
+    tempA$Pattern <- paste(tempA$A, tempA$B, tempA$C, tempA$D, tempA$E)
+    tempA <- dcast(tempA, liebmannnr ~ Fragennummer, value.var = "Pattern")
+    tempA <- data.frame(apply(tempA[-1], 2, function(x) colsplit(x, " ", 1:5)), row.names = tempA[ , 1])
     
-    solution <- unlist(solutionGuess())
-    itemType <- rep(itemTypes(), each = 5)
+    # reshape B
+    tempB <- dataB()
+    tempB$Pattern <- paste(tempB$A, tempB$B, tempB$C, tempB$D, tempB$E)
+    tempB <- dcast(tempB, liebmannnr ~ Fragennummer, value.var = "Pattern")
+    tempB <- data.frame(apply(tempB[-1], 2, function(x) colsplit(x, " ", 1:5)), row.names = tempB[ , 1])
     
-    scores <- data.frame(t(apply(temp, 1, function(x) ifelse(x == solution, 1, ifelse(itemType == "Multiple Choice" & x == 0, 0, -1)))))
+    # sort B
+    tempB <- tempB[ , corresponding()]
+    
+    # rename and bind A/B
+    colnames(tempA) <- 1:160
+    colnames(tempB) <- 1:160
+    rbind(tempA, tempB)
   })
   
-  output$table_scores <- renderDataTable ({
-    scores()
+  # compute correctness
+  correctness <- reactive ({
+    
+    temp <- dataReordered()
+    
+    # exclude empty tests
+    empty <- apply(temp, 1, function(x) ifelse(var(x) == 0, TRUE, FALSE))
+    temp <- temp[!empty, ]
+    
+    # compare answers with solution
+    data.frame(t(apply(temp, 1, function(x) ifelse(x == solution(), ifelse(itemTypes() == "Multiple Choice" & x == 0, 0, 1), ifelse(itemTypes() == "Multiple Choice" & x == 0, 0, -1)))))
+    
   })
   
-  graphics <- reactive ({
-    correct   <- colSums(scores()==1)
-    no_answer <- colSums(scores()==0)
-    wrong     <- colSums(scores()==-1)
-    yess <- rbind(correct, wrong, no_answer)
+  # preparing data for plots
+  plotData <- reactive ({
+    correct <- colSums(correctness()==1)
+    noAnswer <- colSums(correctness()==0)
+    incorrect <- colSums(correctness()==-1)
+    rbind(correct, incorrect, noAnswer)
   })
   
+  # generate plots
   for (i in 1:160)
   {
     local ({
-      my_i <- i
-      plotname <- paste0("plot", my_i)
-      output[[plotname]] <- renderPlot({
+      iLocal <- i
+      plotname <- paste0("plot", iLocal)
+      output[[plotname]] <- renderPlot ({
         par(mar = c(0, 0, 0, 0))
-        now <- barplot(as.matrix(graphics()[ , my_i]), col = c("Green", "Red", "Gray"), horiz = TRUE, axes = FALSE, main = NULL, border = FALSE)
-        text(0, now, graphics()[1 , my_i], cex = 1, pos = 4)
-        text(graphics()[1 , my_i], now, graphics()[2 , my_i], cex = 1, pos = 4)
-        if (graphics()[3 , my_i] > 0)
+        currentPlot <- barplot(as.matrix(plotData()[ , iLocal]), col = c("Green", "Red", "Gray"), horiz = TRUE, axes = FALSE, main = NULL, border = FALSE)
+        text(0, currentPlot, plotData()[1 , iLocal], cex = 1, pos = 4)
+        text(plotData()[1 , iLocal], currentPlot, plotData()[2 , iLocal], cex = 1, pos = 4)
+        if (plotData()[3 , iLocal] > 0)
         {
-          text(graphics()[1 , my_i] + graphics()[2 , my_i], now, graphics()[3 , my_i], cex = 1, pos = 4)
+          text(plotData()[1 , iLocal] + plotData()[2 , iLocal], currentPlot, plotData()[3 , iLocal], cex = 1, pos = 4)
         }
-        
         dev.off()
       })
     })
   }
   
-  pointsReachable <- reactive ({
-    itemMaxScores <- rep(maxPointsGuess(), each = 5)
-    nrOfAlternatives <- rep(numberOfAlternatives(), each = 5)
-    
-    pointsreachable <- c()
-    for (i in seq(1, 160, 5))
-    {
-      for (j in 1:5)
-      {
-        if (nrOfAlternatives[i] < j)
-        {
-          pointsreachable <- c(pointsreachable, 0)
-        }
-        else
-        {
-          pointsreachable <- c(pointsreachable, itemMaxScores[i] / nrOfAlternatives[i])
-        }
-      }
-    }
-    pointsreachable
-  })
-  
-  points_received <- reactive({
-    data.frame(mapply(`*`, scores(), pointsReachable()))
-  })
-
-  subitemDiff <- reactive ({
-    round(colSums(scores() == 1) / 715, 2)
-  })
-  
-  subitemTotal <- reactive ({
-    temp <- itemTotalCorr(points_received())
-    temp <- ifelse(is.nan(temp), NA, temp)
-  })
-  
-  
-  
-  
-  #OLD STUFF need?
-  
-  # transpose rawData to a data frame with one column for the Matrikelnummer and a column for every item
-  itemData <- reactive ({
-    if (!is.null(rawData()))
-    {
-      temp <- dcast(rawData(), rawData()$matrikelhash ~ rawData()$Fragenummer, value.var = "Punkte")
-      temp <- temp[-1]
-    }
-  })
-  
-  # difficulty for each item
+  # item difficulties
   itemDifficulties <- reactive ({
-    if (!is.null(itemData()) & !is.null(maxPointsGuess()))
+    if (!is.null(itemData()) & !is.null(itemPoints()))
     {
-      itemDiff(itemData(), maxPointsGuess())
+      itemDiff(itemData(), itemPoints()[c(TRUE, rep(FALSE, 4))])
     }
   })
   
-  # item total correlation for each item
+  # item total correlations
   itemTotalCorrelations <- reactive ({
-    if (!is.null(itemData()) & !is.null(maxPointsGuess()))
+    if (!is.null(itemData()))
     {
       itemTotalCorr(itemData())
     }
   })
   
-  #OLD STUFF need? END
-  
-  
-  
-  
-  
-  
-  
-  
-  # OUTPUT: Table to show item statistics and select/deselect items
-  output$statisticsTable <- renderUI ({
+  # OUTPUT: table to identify ambigous items
+  output$itemTable <- renderUI ({
     
-    rep <- c(1:160)
+    index <- seq(1, 160, 5)
     
-    temp <- '
-      <table class="table table-striped table-hover">
+    temp <- paste0('
+      <table class="table">
         <thead>
           <tr>
-            <th width = "15%">
-              #
+            <th width="10%">
+              Item
             </th>
-            <th>
-              Type / Answers
-            </th>
-            <th width = "15%">
+            <th width="40%" style="padding-left: 15px">
               Difficulty
             </th>
-            <th width = "15%">
+            <th width="40%">
               Item Total Correlation
             </th>
-            <th width = "15%">
-              
+            <th width="10%">
             </th>
           </tr>
         </thead>
-        <tbody>'
+        <tbody>')
     
     for (i in 1:numberOfItems())
     {
-      temp <- paste0(temp, '
-        <tr height = "100px">
-          <td style = "vertical-align: middle">
-            ', i, '
-          </td>
-          <td style = "vertical-align: middle">
-            ', itemTypes()[i], '
-          </td>
-          <td style = "vertical-align: middle">
-            ', itemDifficulties()[i], '
-          </td>
-          <td style = "vertical-align: middle">
-            ', itemTotalCorrelations()[i], '
-          </td>
-          <td align = "center" style = "vertical-align: middle">
-            <input id="inOrOutItem', i, '" type="checkbox" checked/>
-          </td>
-        </tr>
-      ')
-      
-      for (j in 1:5)
+      if (itemTypes()[index[i]] == "Single Choice")
       {
         temp <- paste0(temp, '
-          <tr style = "background: white; font-weight: lighter;">
-            <td style = "vertical-align: middle">
-              ', i, '.', j, '
+          <tr style = "background: #F5F5F5; height: 80px">
+            <td style="vertical-align: middle">
+              ', i, '
             </td>
-            <td style = "vertical-align: middle">
-              <div id="plot', rep[1], '" class="shiny-plot-output" style="width: 600px; height:50px"></div>
+            <td style="vertical-align: middle; padding-left: 15px">
+              ', itemDifficulties()[i], '
             </td>
-        ')
-        if (itemTypes()[i] == "Single Choice")
+            <td style="vertical-align: middle;">
+              ', itemTotalCorrelations()[i], '
+            </td>
+            <td style="vertical-align: middle; text-align: center">
+              <input id="out', index[i], '" type="checkbox" checked="checked"/>
+            </td>
+          </tr>')
+        
+        for (j in 1:itemAlternatives()[index[i]])
         {
           temp <- paste0(temp, '
-            <td style = "vertical-align: middle">
-              ', subitemDiff()[rep[1]], '
-            </td>
-            <td>
-              
-            </td>
-            <td align = "center" style = "vertical-align: middle">
-              <input id="inOrOut', rep[1],'" type="checkbox" checked/>
-            </td>
-          </tr>
-          ')
+            <tr style = "background: white; font-weight: lighter;">
+              <td style="vertical-align: middle">
+                ', i, '.', j, '
+              </td>
+              <td style="vertical-align: middle" colspan = "2">
+                <div id="plot', index[i] + j - 1, '" class="shiny-plot-output" style="height:50px"/>
+              </td>
+              <td style="vertical-align: middle">
+              </td>
+            </tr>')
         }
-        else
+      }
+      else
+      {
+        temp <- paste0(temp, '
+          <tr style = "background: #F5F5F5; height: 80px">
+            <td style="vertical-align: middle">
+              ', i, '
+            </td>
+            <td style="vertical-align: middle; padding-left: 15px">
+              ', itemDifficulties()[i], '
+            </td>
+            <td style="vertical-align: middle;">
+              ', itemTotalCorrelations()[i], '
+            </td>
+            <td style="vertical-align: middle; text-align: center">
+            </td>
+          </tr>')
+        
+        for (j in 1:itemAlternatives()[index[i]])
         {
           temp <- paste0(temp, '
-            <td style = "vertical-align: middle">
-              ', subitemDiff()[rep[1]], '
-            </td>
-            <td style = "vertical-align: middle">
-              ', subitemTotal()[rep[1]], '
-            </td>
-            <td align = "center" style = "vertical-align: middle">
-              <input id="inOrOut', rep[1],'" type="checkbox" checked/>
-            </td>
-          </tr>
-          ')
+            <tr style = "background: white; font-weight: lighter;">
+              <td style="vertical-align: middle">
+                ', i, '.', j, '
+              </td>
+              <td style="vertical-align: middle" colspan = "2">
+                <div id="plot', index[i] + j - 1, '" class="shiny-plot-output" style="height:50px"/>
+              </td>
+              <td style="vertical-align: middle; text-align: center">
+                <input id="out', index[i] + j - 1, '" type="checkbox" checked="checked"/>
+              </td>
+            </tr>')
         }
-        rep <- rep[-1]
       }
     }
     
@@ -1253,117 +1327,111 @@ shinyServer(function(input, output, session) {
     ')
     
     HTML(temp)
+    
   })
   
-  
-  
-  
-  for (i in 1:32)
-  {
-    local ({
-      my_i <- i
-      name <- paste0("inOrOutItem", i)
-      rep <- seq(1, 160, 5)
-      
-      observe ({
-        if (!is.null(input[[name]]))
-        {
-          if (!input[[name]])
-          {
-            for (j in rep[my_i]:(rep[my_i] + 4))
-            {
-              updateCheckboxInput(session, paste0("inOrOut", j), value = FALSE)
-            }
-          }
-          else
-          {
-            for (j in rep[my_i]:(rep[my_i] + 4))
-            {
-              updateCheckboxInput(session, paste0("inOrOut", j), value = TRUE)
-            }
-          }
-        }
-      })
-    })
-  }
-  
+  # out items
   outItems <- reactive ({
-    if (!is.null(numberOfItems()) && !is.null(input$inOrOut1))
+    temp <- c()
+    for (i in 1:(numberOfItems() * 5))
     {
-      outItems <- c()
-      for (i in 1:160)
+      if (!is.null(eval(parse(text = paste0('input$out', i)))) && !eval(parse(text = paste0('input$out', i))))
       {
-        if (!is.null(eval(parse(text = paste0("input$inOrOut", i)))))
+        if (itemTypes()[i] == "Single Choice")
         {
-          if (!eval(parse(text = paste0("input$inOrOut", i))))
-          {
-            outItems <- c(outItems, i)
-          }
+          temp <- c(temp, as.integer(c(i:(i + itemAlternatives()[i] - 1))))
+        }
+        else
+        {
+          temp <- c(temp, as.integer(i))
         }
       }
-      
-      rep <- seq(1, 160, 5)
-      
-      for (i in 1:32)
-      {
-        test <- seq(rep[i], (rep[i] + 4))
-        
-        if (all(test %in% outItems))
-        {
-          updateCheckboxInput(session, paste0("inOrOutItem", i), value = FALSE)
-        }
-        else if (all(!(test %in% outItems)))
-        {
-          updateCheckboxInput(session, paste0("inOrOutItem", i), value = TRUE)
-        }
-      }
-      
-      outItems
     }
-  })
-  
-  
-  updatedPoints <- reactive ({
-    temp <- points_received()
-    for (i in 1:length(outItems()))
-    {
-      temp[ , outItems()[i]] <- pointsReachable()[i]
-    }
+    print(class(temp))
     temp
   })
   
-  
-
-  
-  
-  output$table_updated <- renderDataTable ({
-    updatedPoints()
+  # update correctness
+  correctnessFinal <- reactive ({
+    temp <- correctness()
+    temp[outItems()] <- 1
   })
   
-  
-
-  
-  
-  finalPoints <- reactive ({
-    itemMaxScores <- rep(maxPointsGuess(), each = 5)
-    nrOfAlternatives <- rep(numberOfAlternatives(), each = 5)
+  # total scores
+  scores <- reactive ({
     
-    pointsDef <- c()
-    for (i in seq(1, 160, 5))
+    pointsPerAlternative <- itemPoints() / itemAlternatives()
+    scores <- data.frame(mapply('*', correctnessFinal(), pointsPerAlternative), row.names = rownames(correctnessFinal()))
+    
+    #index <- seq(1, 160, 5)
+    #scoresRounded <- sapply(index, function(x) ifelse(itemTypes()[x] == "Single Choice" & rowSums(scores[ , x:(x + 4)]) != itemPoints()[x], 0, round25(rowSums(scores[ , x:(x + 4)]))))
+    #scoresRounded <- ifelse(scoresRounded < 0, 0, scoresRounded)
+    scores
+  })
+  
+  # slider 4
+  output$slider4 <- renderUI ({
+    sliderInput("points4", label="Grade 4", min=0, max=sum(itemPoints()) / 5, value=sum(itemPoints()) / 5 / 2, step=0.25)
+  })
+  
+  # slider 6
+  output$slider6 <- renderUI ({
+    sliderInput("points6", label="Grade 6", min=0, max=sum(itemPoints()) / 5, value=sum(itemPoints()) / 5, step=0.25)
+  })
+  
+  # grading slope
+  slope <- reactive ({
+    if (!is.null(input$points4) && !is.null(input$points6))
     {
-      pointsDef <- c(pointsDef, rowSums(updatedPoints()[ , i:(i + 4)]))
+      calculateSlope(input$points4, 3.875, input$points6, 5.875)
     }
-    
-    out <- matrix(pointsDef, ncol = 32, nrow = 715)
-    
-    out <- data.frame(out)
-    out
+  })
+  
+  output$testo <- renderDataTable({
+    correctnessFinal()
+  })
+  
+  output$blap <- renderText ({
+    slope()
   })
   
   
-  output$oh2 <- renderDataTable ({
-    finalPoints()
-  })
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  # OUTPUT: download handler for the report
+  output$report = downloadHandler (
+    filename = "Report.pdf",
+    content = function(file)
+    {
+      out = knit2pdf('template.rnw', clean = TRUE, encoding="UTF-8")
+      file.rename(out, file) # move pdf to file for downloading
+      file.remove("template.tex")
+      file.remove("figure/figure1-1.pdf", "figure/figure2-1.pdf", "figure/figure3-1.pdf", "figure/figure4-1.pdf")
+      file.remove("figure")
+    },
+    contentType = 'application/pdf'
+  )
+  
   
   
   
