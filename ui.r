@@ -2,7 +2,7 @@ shinyUI(fluidPage(
   
   tags$style(type='text/css', '
     body { padding: 5vh }
-    .tab-content { height: 90vh; overflow-y: auto; padding-left: 1vw; }
+    .tab-content { height: 90vh; overflow-y: auto; }
     .shiny-input-container { display: table-cell; vertical-align: middle; }
   '),
   
@@ -27,14 +27,8 @@ shinyUI(fluidPage(
       h1('Distribution'),
       p('Check the distribution of the raw scores.'),
       tags$hr(),
-      tabsetPanel(
-        tabPanel("Histogram",
-          plotOutput("histogramRawScores")
-        ),
-        tabPanel("Q-Q plot",
-          plotOutput("qqRawScores")
-        )
-      )
+      plotOutput("histogramRawScores"),
+      plotOutput("qqRawScores")
     ),
     
     tabPanel('Items',
@@ -47,24 +41,23 @@ shinyUI(fluidPage(
     tabPanel('Grades',
       h1('Grades'),
       p('Define the number of points needed for grades 4 and 6.'),
-      textOutput("blap"),
       tags$hr(),
-      fluidRow(
-        column(6,
+      fixedRow(
+        column(4,
           uiOutput("slider4")
         ),
-        column(6,
+        column(4,
           uiOutput("slider6")
         )
       )
+      #plotOutput("grades")
     ),
     
     tabPanel('Report',
       h1('Report'),
       p('Download a short report about the test results.'),
       tags$hr(),
-      downloadButton("report", "Report (PDF)"),
-      dataTableOutput("testo")
+      downloadButton("report", "Report (PDF)")
     )
     
   )
