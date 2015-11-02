@@ -1,5 +1,4 @@
 library(shiny)
-library(DT)
 library(reshape2)
 library(knitr)
 library(xtable)
@@ -420,7 +419,7 @@ shinyServer(function(input, output, session) {
   })
   
   # OUTPUT: histogram of raw scores
-  output$histogramRawScores <- renderPlot ({
+  output$histRawScores <- renderPlot ({
     if (!is.null(itemData()) && !is.null(itemPoints()))
     {
       totalPoints <- sum(itemPoints()) / 5
@@ -447,68 +446,80 @@ shinyServer(function(input, output, session) {
   
   # reorder data (based on corresponding alternatives of series B)
   dataReordered <- reactive ({
-    # reshape A
-    tempA <- dataA()
-    tempA$Pattern <- paste(tempA$A, tempA$B, tempA$C, tempA$D, tempA$E)
-    tempA <- dcast(tempA, liebmannnr ~ Fragennummer, value.var = "Pattern")
-    tempA <- data.frame(apply(tempA[-1], 2, function(x) colsplit(x, " ", 1:5)), row.names = tempA[ , 1])
-    
-    # reshape B
-    tempB <- dataB()
-    tempB$Pattern <- paste(tempB$A, tempB$B, tempB$C, tempB$D, tempB$E)
-    tempB <- dcast(tempB, liebmannnr ~ Fragennummer, value.var = "Pattern")
-    tempB <- data.frame(apply(tempB[-1], 2, function(x) colsplit(x, " ", 1:5)), row.names = tempB[ , 1])
-    
-    # sort B
-    tempB <- tempB[ , corresponding()]
-    
-    # rename and bind A/B
-    colnames(tempA) <- 1:160
-    colnames(tempB) <- 1:160
-    rbind(tempA, tempB)
+    if (!is.null(data()) && !is.null(corresponding()))
+    {
+      # reshape A
+      tempA <- dataA()
+      tempA$Pattern <- paste(tempA$A, tempA$B, tempA$C, tempA$D, tempA$E)
+      tempA <- dcast(tempA, liebmannnr ~ Fragennummer, value.var = "Pattern")
+      tempA <- data.frame(apply(tempA[-1], 2, function(x) colsplit(x, " ", 1:5)), row.names = tempA[ , 1])
+      
+      # reshape B
+      tempB <- dataB()
+      tempB$Pattern <- paste(tempB$A, tempB$B, tempB$C, tempB$D, tempB$E)
+      tempB <- dcast(tempB, liebmannnr ~ Fragennummer, value.var = "Pattern")
+      tempB <- data.frame(apply(tempB[-1], 2, function(x) colsplit(x, " ", 1:5)), row.names = tempB[ , 1])
+      
+      # sort B
+      tempB <- tempB[ , corresponding()]
+      
+      # rename and bind A/B
+      colnames(tempA) <- 1:160
+      colnames(tempB) <- 1:160
+      rbind(tempA, tempB)
+    }
   })
   
   # compute correctness
   correctness <- reactive ({
-    
-    temp <- dataReordered()
-    
-    # exclude empty tests
-    empty <- apply(temp, 1, function(x) ifelse(var(x) == 0, TRUE, FALSE))
-    temp <- temp[!empty, ]
-    
-    # compare answers with solution
-    data.frame(t(apply(temp, 1, function(x) ifelse(x == solution(), ifelse(itemTypes() == "Multiple Choice" & x == 0, 0, 1), ifelse(itemTypes() == "Multiple Choice" & x == 0, 0, -1)))))
-    
+    if (!is.null(dataReordered()) && !is.null(solution()) && !is.null(itemTypes()))
+    {
+      temp <- dataReordered()
+      data.frame(t(apply(temp, 1, function(x) ifelse(x == solution(), ifelse(itemTypes() == "Multiple Choice" & x == 0, 0, 1), ifelse(itemTypes() == "Multiple Choice" & x == 0, 0, -1)))))
+    }
   })
   
-  # preparing data for plots
+  # prepare data for plots
   plotData <- reactive ({
-    correct <- colSums(correctness()==1)
-    noAnswer <- colSums(correctness()==0)
-    incorrect <- colSums(correctness()==-1)
-    rbind(correct, incorrect, noAnswer)
+    if (!is.null(correctness()))
+    {
+      correct <- colSums(correctness()==1)
+      noAnswer <- colSums(correctness()==0)
+      incorrect <- colSums(correctness()==-1)
+      rbind(correct, incorrect, noAnswer)
+    }
   })
   
   # generate plots
-  for (i in 1:160)
-  {
-    local ({
-      iLocal <- i
-      plotname <- paste0("plot", iLocal)
-      output[[plotname]] <- renderPlot ({
-        par(mar = c(0, 0, 0, 0))
-        currentPlot <- barplot(as.matrix(plotData()[ , iLocal]), col = c("Green", "Red", "Gray"), horiz = TRUE, axes = FALSE, main = NULL, border = FALSE)
-        text(0, currentPlot, plotData()[1 , iLocal], cex = 1, pos = 4)
-        text(plotData()[1 , iLocal], currentPlot, plotData()[2 , iLocal], cex = 1, pos = 4)
-        if (plotData()[3 , iLocal] > 0)
-        {
-          text(plotData()[1 , iLocal] + plotData()[2 , iLocal], currentPlot, plotData()[3 , iLocal], cex = 1, pos = 4)
-        }
-        dev.off()
-      })
-    })
-  }
+  observe ({
+    if(!is.null(numberOfItems()))
+    {
+      for (i in 1:(numberOfItems() * 5))
+      {
+        local ({
+          iLocal <- i
+          plotName <- paste0("plot", iLocal)
+          output[[plotName]] <- renderPlot ({
+            par(mar = c(0, 0, 0, 0))
+            currentPlot <- barplot(as.matrix(plotData()[ , iLocal]), col = c("Green", "Red", "Gray"), horiz = TRUE, axes = FALSE, main = NULL, border = FALSE)
+            if (plotData()[1 , iLocal] > 25)
+            {
+              text(0, currentPlot, plotData()[1 , iLocal], cex = 1, pos = 4)
+            }
+            if (plotData()[2 , iLocal] > 25)
+            {
+              text(plotData()[1 , iLocal], currentPlot, plotData()[2 , iLocal], cex = 1, pos = 4)
+            }
+            if (plotData()[3 , iLocal] > 25)
+            {
+              text(plotData()[1 , iLocal] + plotData()[2 , iLocal], currentPlot, plotData()[3 , iLocal], cex = 1, pos = 4)
+            }
+            dev.off()
+          })
+        })
+      }
+    }
+  })
   
   # item difficulties
   itemDifficulties <- reactive ({
@@ -526,10 +537,13 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  # OUTPUT: table to identify ambigous items
+  # OUTPUT: table with item statistics
   output$itemTable <- renderUI ({
     
-    index <- seq(1, 160, 5)
+    if (!is.null(numberOfItems()) && !is.null(itemTypes()) && !is.null(itemDifficulties()) && !is.null(itemTotalCorrelations()) && !is.null(itemAlternatives()))
+    {
+    
+    index <- seq(1, numberOfItems() * 5, 5)
     
     temp <- paste0('
       <table class="table">
@@ -538,7 +552,7 @@ shinyServer(function(input, output, session) {
             <th width="10%">
               Item
             </th>
-            <th width="40%" style="padding-left: 15px">
+            <th width="40%" style = "padding-left: 15px">
               Difficulty
             </th>
             <th width="40%">
@@ -555,17 +569,17 @@ shinyServer(function(input, output, session) {
       if (itemTypes()[index[i]] == "Single Choice")
       {
         temp <- paste0(temp, '
-          <tr style = "background: #F5F5F5; height: 80px; font-size: 150%">
-            <td style="vertical-align: middle">
+          <tr style = "background: #F5F5F5; height: 50px;">
+            <td style = "vertical-align: middle">
               ', i, '
             </td>
-            <td style="vertical-align: middle; padding-left: 15px">
-              Difficulty: ', itemDifficulties()[i], '
+            <td style = "vertical-align: middle; padding-left: 15px;">
+              ', itemDifficulties()[i], '
             </td>
-            <td style="vertical-align: middle;">
-              Item Total Correlation: ', itemTotalCorrelations()[i], '
+            <td style = "vertical-align: middle">
+              ', itemTotalCorrelations()[i], '
             </td>
-            <td style="vertical-align: middle; text-align: center">
+            <td style = "vertical-align: middle; text-align: center;">
               <input id="out', index[i], '" type="checkbox" checked="checked"/>
             </td>
           </tr>')
@@ -574,13 +588,13 @@ shinyServer(function(input, output, session) {
         {
           temp <- paste0(temp, '
             <tr style = "background: white; font-weight: lighter;">
-              <td style="vertical-align: middle">
+              <td style = "vertical-align: middle">
                 ', i, '.', j, '
               </td>
-              <td style="vertical-align: middle" colspan = "2">
-                <div id="plot', index[i] + j - 1, '" class="shiny-plot-output" style="height:50px"/>
+              <td style = "vertical-align: middle" colspan = "2">
+                <div id="plot', index[i] + j - 1, '" class="shiny-plot-output" style = "height: 25px"/>
               </td>
-              <td style="vertical-align: middle">
+              <td style = "vertical-align: middle">
               </td>
             </tr>')
         }
@@ -588,17 +602,17 @@ shinyServer(function(input, output, session) {
       else
       {
         temp <- paste0(temp, '
-          <tr style = "background: #F5F5F5; height: 80px; font-size: 150%">
-            <td style="vertical-align: middle">
+          <tr style = "background: #F5F5F5; height: 50px;">
+            <td style = "vertical-align: middle">
               ', i, '
             </td>
-            <td style="vertical-align: middle; padding-left: 15px">
-              Difficulty: ', itemDifficulties()[i], '
+            <td style = "vertical-align: middle; padding-left: 15px;">
+              ', itemDifficulties()[i], '
             </td>
-            <td style="vertical-align: middle;">
-              Item Total Correlation: ', itemTotalCorrelations()[i], '
+            <td style = "vertical-align: middle">
+              ', itemTotalCorrelations()[i], '
             </td>
-            <td style="vertical-align: middle; text-align: center">
+            <td style = "vertical-align: middle; text-align: center;">
             </td>
           </tr>')
         
@@ -606,13 +620,13 @@ shinyServer(function(input, output, session) {
         {
           temp <- paste0(temp, '
             <tr style = "background: white; font-weight: lighter;">
-              <td style="vertical-align: middle">
+              <td style = "vertical-align: middle">
                 ', i, '.', j, '
               </td>
-              <td style="vertical-align: middle" colspan = "2">
-                <div id="plot', index[i] + j - 1, '" class="shiny-plot-output" style="height:50px"/>
+              <td style = "vertical-align: middle" colspan = "2">
+                <div id="plot', index[i] + j - 1, '" class="shiny-plot-output" style = "height: 25px"/>
               </td>
-              <td style="vertical-align: middle; text-align: center">
+              <td style = "vertical-align: middle; text-align: center">
                 <input id="out', index[i] + j - 1, '" type="checkbox" checked="checked"/>
               </td>
             </tr>')
@@ -627,133 +641,175 @@ shinyServer(function(input, output, session) {
     
     HTML(temp)
     
+    }
+    
   })
   
   # out items
   outItems <- reactive ({
-    temp <- c()
-    for (i in 1:(numberOfItems() * 5))
+    if (!is.null(numberOfItems()) && !is.null(input$out1) && !is.null(itemTypes()) && !is.null(itemAlternatives()))
     {
-      if (!is.null(eval(parse(text = paste0('input$out', i)))) && !eval(parse(text = paste0('input$out', i))))
+      temp <- c()
+      for (i in 1:(numberOfItems() * 5))
       {
-        if (itemTypes()[i] == "Single Choice")
+        if (!is.null(eval(parse(text = paste0('input$out', i)))) && !eval(parse(text = paste0('input$out', i))))
         {
-          temp <- c(temp, as.integer(c(i:(i + itemAlternatives()[i] - 1))))
-        }
-        else
-        {
-          temp <- c(temp, as.integer(i))
+          if (itemTypes()[i] == "Single Choice")
+          {
+            temp <- c(temp, as.integer(c(i:(i + itemAlternatives()[i] - 1))))
+          }
+          else
+          {
+            temp <- c(temp, as.integer(i))
+          }
         }
       }
+      temp
     }
-    temp
   })
   
   # update correctness
   correctnessFinal <- reactive ({
-    temp <- correctness()
-    if (!is.null(outItems()))
+    if (!is.null(correctness()))
     {
-      temp[outItems()] <- 1
+      temp <- correctness()
+      if (!is.null(outItems()))
+      {
+        temp[outItems()] <- 1
+      }
+      temp
     }
-    temp
   })
   
   # total scores
   scores <- reactive ({
-    
-    pointsPerAlternative <- itemPoints() / itemAlternatives()
-    scores <- data.frame(mapply('*', correctnessFinal(), pointsPerAlternative), row.names = rownames(correctnessFinal()))
-    
-    index <- seq(1, 160, 5)
-    scoresRounded <- sapply(index, function(x) ifelse(itemTypes()[x] == "Single Choice" & rowSums(scores[ , x:(x + 4)]) != itemPoints()[x], 0, round25(rowSums(scores[ , x:(x + 4)]))))
-    scoresRounded <- ifelse(scoresRounded < 0, 0, scoresRounded)
-    scoresRounded <- data.frame(rowSums(scoresRounded))
+    if (!is.null(correctnessFinal()) && !is.null(itemPoints()) && !is.null(itemAlternatives()))
+    {
+      pointsPerAlternative <- itemPoints() / itemAlternatives()
+      scoresPerAlternative <- data.frame(mapply('*', correctnessFinal(), pointsPerAlternative), row.names = rownames(correctnessFinal()))
+      
+      index <- seq(1, 160, 5)
+      scoresPerItem <- sapply(index, function(x) ifelse(itemTypes()[x] == "Single Choice" & rowSums(scoresPerAlternative[ , x:(x + 4)]) != itemPoints()[x], 0, round25(rowSums(scoresPerAlternative[ , x:(x + 4)]))))
+      scoresPerItem <- ifelse(scoresPerItem < 0, 0, scoresPerItem)
+      
+      data.frame(rowSums(scoresPerItem))
+    }
   })
   
   # grades slider
-  output$slider4 <- renderUI ({
-    sliderInput("points4", label=NULL, min=0, max=sum(itemPoints()) / 5, value=c(sum(itemPoints()) / 5 / 2, sum(itemPoints()) / 5), step=0.25)
+  output$slider46 <- renderUI ({
+    if (!is.null(itemPoints()))
+    {
+      sliderInput("points46", label=NULL, min=0, max=sum(itemPoints()) / 5, value=c(sum(itemPoints()) / 5 / 3, sum(itemPoints()) / 5), step=0.25)
+    }
   })
-  
   
   # grading slope
   slope <- reactive ({
-    if (!is.null(input$points4) && !is.null(input$points6))
+    if (!is.null(input$points46))
     {
-      calculateSlope(input$points4, 3.875, input$points6, 5.875)
+      calculateSlope(input$points46[1], 3.875, input$points46[2], 5.875)
     }
   })
   
   # grading intercept
   intercept <- reactive ({
-    if (!is.null(slope()) && !is.null(input$points4))
+    if (!is.null(slope()) && !is.infinite(slope()) && !is.null(input$points46))
     {
-      calculateIntercept(3.875, slope(), input$points4)
+      calculateIntercept(3.875, slope(), input$points46[1])
     }
   })
   
   # compute grades
   grades <- reactive ({
-    temp <- scores()
-    temp$note <- round25(calculateY(slope(), temp[ , 1], intercept()))
-    temp$note <- ifelse(temp$note > 6, 6, temp$note)
-    temp$note <- ifelse(temp$note < 1, 1, temp$note)
-    temp
+    if (!is.null(scores()) && !is.null(slope()) && !is.null(intercept()) && !is.null(emptyTests()))
+    {
+      temp1 <- scores()
+      temp1$Grade <- round25(calculateY(slope(), temp1[ , 1], intercept()))
+      temp1$Grade <- ifelse(temp1$Grade > 6, 6, temp1$Grade)
+      temp1$Grade <- ifelse(temp1$Grade < 1, 1, temp1$Grade)
+      colnames(temp1) <- c("Points", "Grade")
+      
+      # add empty tests again
+      temp2 <- emptyTests()
+      temp2 <- data.frame(rep(0, length(emptyTests())), 1, row.names = emptyTests())
+      colnames(temp2) <- c("Points", "Grade")
+      
+      rbind(temp1, temp2)
+    }
   })
   
-  # mode
-  mode <- reactive ({
+  # grades mean
+  gradesMean <- reactive ({
     if (!is.null(grades()))
     {
-      max(sort(table(grades()[ , 2]), decreasing=TRUE))
+      round(mean(grades()[ , 2]), 2)
     }
   })
   
-  # plot grades
-  output$grades <- renderPlot ({
-    if (!is.null(grades()) && !is.null(mode()))
+  # number passed
+  numberPassed <- reactive ({
+    if (!is.null(grades()))
     {
+      sum(grades()[ , 2] > 3.75)
+    }
+  })
+  
+  # number failed
+  numberFailed <- reactive ({
+    if (!is.null(grades()))
+    {
+      sum(grades()[ , 2] < 4)
+    }
+  })
+  
+  # OUTPUT: plot grades
+  output$histGrades <- renderPlot ({
+    if (!is.null(grades()) && !is.null(emptyTests()))
+    {
+      percentPassed <- round(100 * numberPassed() / (numberOfStudents() - length(emptyTests())), 2)
+      percentFailed <- round(100 * (numberFailed() - length(emptyTests())) / (numberOfStudents() - length(emptyTests())), 2)
+      mode <- max(sort(table(grades()[ , 2]), decreasing=TRUE))
+      
       h <- hist(grades()[ , 2], breaks=seq(0.875,6.125,0.25))
       c = ifelse(h$mids < 4, "red", "green");
-      plot(h, main=NULL, xlab="Note", ylab="Häufigkeit", xlim=c(0.75,6.25), ylim=c(0,mode()+10), col=c, border="white", labels=TRUE)
+      plot(h, main=NULL, xlab="Grade", ylab="Frequency", xlim=c(0.75,6.25), ylim=c(0,mode+10), col=c, border="white", labels=TRUE)
+      
+      segments(x0 = mean(grades()[ , 2]), y0 = 1, y1 = 25, col = "black", lwd = 3, lty = 3)
+      legend("topright", legend = c(paste0("Pass: ", numberPassed(), " (", percentPassed, "%)"), paste0("Fail: ", numberFailed() - length(emptyTests()), " (", percentFailed, "%)"), paste0("Mean: ", round(mean(grades()[ , 2]), 2))), col = c("green", "red", "black"), lty = c(1, 1, 3))
     }
   })
   
-  output$blii <- renderDataTable({
-    grades()
-  })
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  # OUTPUT: download handler for the report
-  output$report = downloadHandler (
-    filename = "Report.pdf",
-    content = function(file)
+  # OUTPUT: download handlers
+  observe ({
+    if (!is.null(grades()))
     {
-      out = knit2pdf('template.rnw', clean = TRUE, encoding="UTF-8")
-      file.rename(out, file) # move pdf to file for downloading
-      file.remove("template.tex")
-      file.remove("figure/figure1-1.pdf", "figure/figure2-1.pdf", "figure/figure3-1.pdf", "figure/figure4-1.pdf")
-      file.remove("figure")
-    },
-    contentType = 'application/pdf'
-  )
+      
+      # OUTPUT: download handler for grades (.csv)
+      output$csv <- downloadHandler (
+        filename = "Grades.csv",
+        content = function(file)
+        {
+          write.csv(grades(), file, row.names = TRUE, fileEncoding="UTF-8")
+        }
+      )
+      
+      # OUTPUT: download handler for report (.pdf)
+      output$report = downloadHandler (
+        filename = "Report",
+        content = function(file)
+        {
+          out = knit2pdf('template.rnw', clean = TRUE, encoding="UTF-8")
+          file.rename(out, file) # move pdf to file for downloading
+          file.remove("template.tex")
+          file.remove("figure/figure1-1.pdf", "figure/figure2-1.pdf", "figure/figure3-1.pdf", "figure/figure4-1.pdf")
+          file.remove("figure")
+        },
+        contentType = 'application/pdf'
+      )
+      
+    }
+    
+  })
   
 })

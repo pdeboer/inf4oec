@@ -27,7 +27,7 @@ shinyUI(fluidPage(
       h1('Distribution'),
       p('Check the distribution of the raw scores.'),
       tags$hr(),
-      plotOutput("histogramRawScores"),
+      plotOutput("histRawScores"),
       plotOutput("qqRawScores")
     ),
     
@@ -40,23 +40,18 @@ shinyUI(fluidPage(
     
     tabPanel('Grades',
       h1('Grades'),
-      p('Define the number of points needed for grades 4 and 6.'),
+      p('Define the number of points needed for grades 4 and 6. Note that the numbers about passed/failed tests refer to', strong('non empty'), 'tests.'),
+      tags$br(),
+      uiOutput("slider46"),
       tags$hr(),
-      fixedRow(
-        column(4,
-          uiOutput("slider4")
-        ),
-        column(4,
-          uiOutput("slider6")
-        )
-      )
-      #plotOutput("grades")
+      plotOutput("histGrades")
     ),
     
     tabPanel('Report',
       h1('Report'),
-      p('Download a short report about the test results.'),
+      p('Download the grades table and/or a short report about the test results.'),
       tags$hr(),
+      downloadButton("csv", "Grades (CSV)"),
       downloadButton("report", "Report (PDF)")
     )
     
