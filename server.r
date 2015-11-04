@@ -668,6 +668,36 @@ shinyServer(function(input, output, session) {
     }
   })
   
+  # out items vector for report
+  outItemsText <- reactive ({
+    temp <- c()
+    i <- 1
+    while (i < (length(outItems()) + 1))
+    {
+      if (itemTypes()[outItems()[i]] == "Single Choice")
+      {
+        temp <- c(temp, as.integer(outItems()[i] / 5 + 1))
+        i <- i + 5
+      }
+      else
+      {
+        if (outItems()[i] %% 5 == 0)
+        {
+          temp <- c(temp, outItems()[i] / 5 + 0.5)
+        }
+        else
+        {
+          digits <- strsplit(as.character(outItems()[i] / 5), "")
+          last <- as.integer(digits[[1]][length(digits[[1]])]) %/% 2
+          temp <- c(temp, as.integer(outItems()[i] / 5 + 1) + 0.1 * last)
+        }
+        i <- i + 1
+      }
+    }
+    print(class(temp))
+    temp
+  })
+  
   # update correctness
   correctnessFinal <- reactive ({
     if (!is.null(correctness()))
@@ -768,7 +798,7 @@ shinyServer(function(input, output, session) {
     if (!is.null(grades()) && !is.null(emptyTests()))
     {
       percentPassed <- round(100 * numberPassed() / (numberOfStudents() - length(emptyTests())), 2)
-      percentFailed <- round(100 * (numberFailed() - length(emptyTests())) / (numberOfStudents() - length(emptyTests())), 2)
+      percentFailed <- 100 - percentPassed
       mode <- max(sort(table(grades()[ , 2]), decreasing=TRUE))
       
       h <- hist(grades()[ , 2], breaks=seq(0.875,6.125,0.25))
@@ -796,14 +826,14 @@ shinyServer(function(input, output, session) {
       
       # OUTPUT: download handler for report (.pdf)
       output$report = downloadHandler (
-        filename = "Report",
+        filename = "Report.pdf",
         content = function(file)
         {
           out = knit2pdf('template.rnw', clean = TRUE, encoding="UTF-8")
           file.rename(out, file) # move pdf to file for downloading
           file.remove("template.tex")
-          file.remove("figure/figure1-1.pdf", "figure/figure2-1.pdf", "figure/figure3-1.pdf", "figure/figure4-1.pdf")
-          file.remove("figure")
+          #file.remove("figure/figure1-1.pdf", "figure/figure2-1.pdf", "figure/figure3-1.pdf", "figure/figure4-1.pdf")
+          #file.remove("figure")
         },
         contentType = 'application/pdf'
       )
