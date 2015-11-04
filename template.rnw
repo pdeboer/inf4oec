@@ -3,7 +3,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage[ngerman]{babel}
+\usepackage[american]{babel}
 
 \usepackage{longtable}
 \usepackage{float}
@@ -33,7 +33,7 @@
 The file
 \textit{
 <<echo=FALSE, results="asis">>=
-cat(stresc(input$inputFile$name), "")
+cat(stresc(input$inputFile$name))
 @
 }
 provided the raw data.
@@ -42,28 +42,28 @@ The test consisted of
 <<echo=FALSE, results="asis">>=
 cat(numberOfItems())
 @
-items.
+items and
 <<echo=FALSE, results="asis">>=
 cat(numberOfStudents())
 @
-students were registered.
+students were registered, of which
 <<echo=FALSE, results="asis">>=
 if (length(emptyTests()) == 0) {
   cat("There were no empty tests.")
 } else {
-  cat(length(emptyTests()), " test were empty and excluded for the analysis.")
+  cat(length(emptyTests()), "handed in an empty test. These tests were excluded for the analysis.")
 }
 @
 <<echo=FALSE, results="asis">>=
-cat(sum(itemPoints()) / 5, "points could be reached at the maximum.")
+cat("The items added up to a maximum of ", sum(itemPoints()) / 5, "points.")
 @
 
 \section{Item analysis}
 \subsection{Distribution of raw scores}
 \begin{figure}[H]
-<<figure1, echo=FALSE, out.width="\\textwidth", fig.height=5.5>>=
+<<figure1, echo=FALSE, out.width="\\textwidth", fig.height=6>>=
 totalPoints <- sum(itemPoints()) / 5
-h <- hist(rowSums(itemData()), main="Histogram", xlab="Points", ylab="Frequency", col = rgb(8/256, 119/256, 189/256), breaks = totalPoints/5, xlim=c(0, totalPoints), xaxt='n')
+h <- hist(rowSums(itemData()), main="Histogram of raw scores", xlab="Points", ylab="Frequency", col = rgb(8/256, 119/256, 189/256), breaks = totalPoints/5, xlim=c(0, totalPoints), xaxt='n')
 axis(1, at=seq(0, totalPoints, 5))
 xfit <- seq(0, totalPoints, length=totalPoints)
 yfit <- dnorm(xfit, mean=mean(rowSums(itemData())), sd=sd(rowSums(itemData())))
@@ -103,55 +103,51 @@ if (length(outItemsText()) == 0) {
   cat(" were discarded.")
 }
 @
+
 <<echo=FALSE, results="asis", comment=NA>>=
 table <- cbind(seq(1:numberOfItems()), itemDifficulties(), itemTotalCorrelations())
 colnames(table) <- c("Item", "Difficulty", "Item Total Correlation")
-table <- xtable(table, caption="The items", digits=c(0,0,2,2), align="llrr")
+table <- xtable(table, caption="Item characteristics", digits=c(0,0,2,2), align="lrrr")
 print(table, include.rownames = FALSE, floating = FALSE, tabular.environment = "longtable")
 @
 
 \section{Grades}
 Grade 4 was reached with
 <<echo=FALSE, results="asis">>=
-cat(input$points46[1])
+cat(input$points46[1], ",", sep = "")
 @
-, grade 6 with
+grade 6 with
 <<echo=FALSE, results="asis">>=
 cat(input$points46[2])
 @
-points.
-
+points. Under these conditions,
 <<echo=FALSE, results="asis">>=
 cat(numberPassed())
 @
-students passed the test. This corresponds to
+students
 <<echo=FALSE, results="asis">>=
-cat(round(100 * numberPassed() / (numberOfStudents() - length(emptyTests())), 2))
+cat("(", percentPassed(), sep = "")
 @
-\% (empty tests excluded).
+\%) passed the test and
 <<echo=FALSE, results="asis">>=
 cat(numberFailed())
 @
-persons (empty tests excluded)
 <<echo=FALSE, results="asis">>=
-cat(paste0("(", 100 - round(100 * numberPassed() / (numberOfStudents() - length(emptyTests())), 2)))
+cat(paste0("(", percentFailed()))
 @
-\%) failed.
-The grade point average was
+\%) failed. The grade point average was
 <<echo=FALSE, results="asis">>=
-cat(paste0(round(gradesMean(), 2), "."))
+cat(paste0(round(gradesMean(), 2), " (empty tests excluded for all numbers)."))
 @
 
 \begin{figure}[H]
-<<figure4, echo=FALSE, out.width="\\textwidth">>=
-percentPassed <- round(100 * numberPassed() / (numberOfStudents() - length(emptyTests())), 2)
-percentFailed <- 100 - percentPassed
-mode <- max(sort(table(grades()[ , 2]), decreasing=TRUE))
-h <- hist(grades()[ , 2], breaks=seq(0.875,6.125,0.25))
+<<figure3, echo=FALSE, out.width="\\textwidth">>=
+h <- hist(grades()[ , 2], breaks=seq(0.875,6.125,0.25), border=FALSE, main="Distribution of grades", xlab="Grade", ylab="Frequency", labels=TRUE)
 c = ifelse(h$mids < 4, "red", "green")
-plot(h, main=NULL, xlab="Grade", ylab="Frequency", xlim=c(0.75,6.25), ylim=c(0,mode+10), col=c, border="white", labels=TRUE)
-segments(x0 = mean(grades()[ , 2]), y0 = 1, y1 = 25, col = "black", lwd = 3, lty = 3)
-legend("topright", legend = c(paste0("Pass: ", numberPassed(), " (", percentPassed, "%)"), paste0("Fail: ", numberFailed() - length(emptyTests()), " (", percentFailed, "%)"), paste0("Mean: ", round(mean(grades()[ , 2]), 2))), col = c("green", "red", "black"), lty = c(1, 1, 3))
+plot(h, xlim=c(0.75,6.25), ylim=c(0,modalWert()+10), col=c, border="white", add = TRUE)
+
+segments(x0 = gradesMean(), y0 = 1, y1 = 25, col = "black", lwd = 3, lty = 3)
+legend("topright", legend = c(paste0("Pass: ", numberPassed(), " (", percentPassed(), "%)"), paste0("Fail: ", numberFailed(), " (", percentFailed(), "%)"), paste0("Mean: ", gradesMean())), col = c("green", "red", "black"), lty = c(1, 1, 3))
 @
 \caption{Histogram of grades}
 \end{figure}

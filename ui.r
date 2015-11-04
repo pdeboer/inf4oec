@@ -41,7 +41,6 @@ shinyUI(fluidPage(
     tabPanel('Grades',
       h1('Grades'),
       p('Define the number of points needed for grades 4 and 6. Note that the numbers about passed/failed tests refer to', strong('non empty'), 'tests.'),
-      tags$br(),
       uiOutput("slider46"),
       tags$hr(),
       plotOutput("histGrades")

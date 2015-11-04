@@ -2,7 +2,7 @@ library(shiny)
 library(reshape2)
 library(knitr)
 library(xtable)
-library(seqinr) #used in knitr template
+library(seqinr) # used in knitr template
 
 # returns the slope of a linear function
 calculateSlope <- function (x1, y1, x2, y2)
@@ -464,8 +464,8 @@ shinyServer(function(input, output, session) {
       tempB <- tempB[ , corresponding()]
       
       # rename and bind A/B
-      colnames(tempA) <- 1:160
-      colnames(tempB) <- 1:160
+      colnames(tempA) <- 1:(numberOfItems() * 5)
+      colnames(tempB) <- 1:(numberOfItems() * 5)
       rbind(tempA, tempB)
     }
   })
@@ -694,7 +694,6 @@ shinyServer(function(input, output, session) {
         i <- i + 1
       }
     }
-    print(class(temp))
     temp
   })
   
@@ -718,7 +717,7 @@ shinyServer(function(input, output, session) {
       pointsPerAlternative <- itemPoints() / itemAlternatives()
       scoresPerAlternative <- data.frame(mapply('*', correctnessFinal(), pointsPerAlternative), row.names = rownames(correctnessFinal()))
       
-      index <- seq(1, 160, 5)
+      index <- seq(1, numberOfItems() * 5, 5)
       scoresPerItem <- sapply(index, function(x) ifelse(itemTypes()[x] == "Single Choice" & rowSums(scoresPerAlternative[ , x:(x + 4)]) != itemPoints()[x], 0, round25(rowSums(scoresPerAlternative[ , x:(x + 4)]))))
       scoresPerItem <- ifelse(scoresPerItem < 0, 0, scoresPerItem)
       
@@ -771,9 +770,11 @@ shinyServer(function(input, output, session) {
   
   # grades mean
   gradesMean <- reactive ({
-    if (!is.null(grades()))
+    if (!is.null(grades()) && !is.null(emptyTests()) && !is.null(numberOfStudents()))
     {
-      round(mean(grades()[ , 2]), 2)
+      sum <- sum(grades()[ , 2]) - length(emptyTests())
+      mean <- sum / (numberOfStudents() - length(emptyTests()))
+      round(mean, 2)
     }
   })
   
@@ -789,7 +790,31 @@ shinyServer(function(input, output, session) {
   numberFailed <- reactive ({
     if (!is.null(grades()))
     {
-      sum(grades()[ , 2] < 4)
+      sum(grades()[ , 2] < 4) - length(emptyTests())
+    }
+  })
+  
+  # percent passed
+  percentPassed <- reactive ({
+    if (!is.null(numberPassed()) && !is.null(numberOfStudents()) && !is.null(emptyTests()))
+    {
+      round(100 * (numberPassed() / (numberOfStudents() - length(emptyTests()))), 2)
+    }
+  })
+  
+  # percent failed
+  percentFailed <- reactive ({
+    if (!is.null(percentPassed()))
+    {
+      100 - percentPassed()
+    }
+  })
+  
+  # grades mode
+  mode <- reactive ({
+    if (!is.null(grades()))
+    {
+      max(sort(table(grades()[ , 2]), decreasing=TRUE))
     }
   })
   
@@ -797,16 +822,12 @@ shinyServer(function(input, output, session) {
   output$histGrades <- renderPlot ({
     if (!is.null(grades()) && !is.null(emptyTests()))
     {
-      percentPassed <- round(100 * numberPassed() / (numberOfStudents() - length(emptyTests())), 2)
-      percentFailed <- 100 - percentPassed
-      mode <- max(sort(table(grades()[ , 2]), decreasing=TRUE))
-      
       h <- hist(grades()[ , 2], breaks=seq(0.875,6.125,0.25))
       c = ifelse(h$mids < 4, "red", "green");
-      plot(h, main=NULL, xlab="Grade", ylab="Frequency", xlim=c(0.75,6.25), ylim=c(0,mode+10), col=c, border="white", labels=TRUE)
+      plot(h, main=NULL, xlab="Grade", ylab="Frequency", xlim=c(0.75,6.25), ylim=c(0,mode()+10), col=c, border="white", labels=TRUE)
       
-      segments(x0 = mean(grades()[ , 2]), y0 = 1, y1 = 25, col = "black", lwd = 3, lty = 3)
-      legend("topright", legend = c(paste0("Pass: ", numberPassed(), " (", percentPassed, "%)"), paste0("Fail: ", numberFailed() - length(emptyTests()), " (", percentFailed, "%)"), paste0("Mean: ", round(mean(grades()[ , 2]), 2))), col = c("green", "red", "black"), lty = c(1, 1, 3))
+      segments(x0 = gradesMean(), y0 = 1, y1 = 25, col = "black", lwd = 3, lty = 3)
+      legend("topright", legend = c(paste0("Pass: ", numberPassed(), " (", percentPassed(), "%)"), paste0("Fail: ", numberFailed(), " (", percentFailed(), "%)"), paste0("Mean: ", gradesMean())), col = c("green", "red", "black"), lty = c(1, 1, 3))
     }
   })
   
@@ -832,8 +853,8 @@ shinyServer(function(input, output, session) {
           out = knit2pdf('template.rnw', clean = TRUE, encoding="UTF-8")
           file.rename(out, file) # move pdf to file for downloading
           file.remove("template.tex")
-          #file.remove("figure/figure1-1.pdf", "figure/figure2-1.pdf", "figure/figure3-1.pdf", "figure/figure4-1.pdf")
-          #file.remove("figure")
+          file.remove("figure/figure1-1.pdf", "figure/figure2-1.pdf", "figure/figure3-1.pdf")
+          file.remove("figure")
         },
         contentType = 'application/pdf'
       )
