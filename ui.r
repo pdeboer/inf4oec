@@ -13,7 +13,8 @@ shinyUI(fluidPage(
       p('Upload the data you want to analyse. It needs to have the following columns: "Matrikelnummer", "Serie", "Fragennummer", "A", "B", "C", "D", "E" and "Punkte".'),
       tags$hr(),
       fileInput('inputFile', '', accept = 'text/csv'),
-      uiOutput("confirmation")
+      uiOutput("confirmation"),
+      dataTableOutput("excludedNAEntries")
     ),
     
     tabPanel('Validation',

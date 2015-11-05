@@ -47,10 +47,23 @@ itemTotalCorr <- function (itemData)
 shinyServer(function(input, output, session) {
   
   # read csv
-  rawData <- reactive ({
+  rawDataCSV <- reactive ({
     if (!is.null(input$inputFile))
     {
       read.csv(input$inputFile$datapath)
+    }
+  })
+  
+  output$excludedNAEntries <- renderDataTable ({
+    temp <- rawDataCSV()
+    temp[is.na(temp$Fragennummer), ]
+  })
+  
+  rawData <- reactive ({
+    if (!is.null(rawDataCSV()))
+    {
+      temp <- rawDataCSV()
+      temp[!is.na(temp$Fragennummer), ]
     }
   })
   
@@ -93,7 +106,7 @@ shinyServer(function(input, output, session) {
     {
       if (numberOfItems() > 0 && numberOfStudents() > 0)
       {
-        HTML(paste0('<font color = "green"><b>', numberOfStudents(), '</b> students and <b>', numberOfItems(), '</b> items found. <b>', length(emptyTests()), '</b> tests are empty and will be excluded for the analysis.</font>'))
+        HTML(paste0('<font color = "green"><b>', numberOfStudents(), '</b> students and <b>', numberOfItems(), '</b> items found. <b>', length(emptyTests()), '</b> tests are empty and will be excluded for the analysis. Excluded the following NA-Entries:</font>'))
       }
       else
       {
