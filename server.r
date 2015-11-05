@@ -198,7 +198,7 @@ shinyServer(function(input, output, session) {
         if (itemTypes()[index[i]] == "Single Choice")
         {
           temp <- paste0(temp, '
-            <tr style = "background: white; font-weight: lighter;">
+            <tr style = "background: white">
               <td style="vertical-align: middle">
                 ', i, '.', j, '
               </td>')
@@ -270,7 +270,7 @@ shinyServer(function(input, output, session) {
         else
         {
           temp <- paste0(temp, '
-            <tr style = "background: white; font-weight: lighter;">
+            <tr style = "background: white">
               <td style="vertical-align: middle">
                 ', i, '.', j, '
               </td>')
