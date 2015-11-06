@@ -54,11 +54,27 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  output$excludedNAEntries <- renderDataTable ({
-    temp <- rawDataCSV()
-    temp[is.na(temp$Fragennummer), ]
+  correspondingDefault <- reactive ({
+    if (!is.null(input$correspondingCSV))
+    {
+      read.csv(input$correspondingCSV$datapath)[ , 2]
+    }
+    else
+    {
+      rep(1:5, numberOfItems())
+    }
   })
   
+  # OUTPUT: display excluded NA entries
+  output$excludedNAEntries <- renderDataTable ({
+    if (!is.null(rawDataCSV()))
+    {
+      temp <- rawDataCSV()
+      temp[is.na(temp$Fragennummer), ]
+    }
+  })
+  
+  # remove NA entries
   rawData <- reactive ({
     if (!is.null(rawDataCSV()))
     {
@@ -241,7 +257,7 @@ shinyServer(function(input, output, session) {
 
               <td style="vertical-align: middle">
                 <div class="form-group shiny-input-container">
-                  <input id="corresponding', index[i] + j - 1, '" type="number" class="form-control" value="', j, '" min="1" max="', itemAlternatives()[index[i]], '"/>
+                  <input id="corresponding', index[i] + j - 1, '" type="number" class="form-control" value="', correspondingDefault()[index[i] + j - 1], '" min="1" max="', itemAlternatives()[index[i]], '"/>
                 </div>
               </td>
 
@@ -274,7 +290,7 @@ shinyServer(function(input, output, session) {
               </td>
               <td style="vertical-align: middle">
                 <div class="form-group shiny-input-container">
-                  <input id="corresponding', index[i] + j - 1, '" type="number" class="form-control" value="', j, '" min="1" max="', itemAlternatives()[index[i]], '"/>
+                  <input id="corresponding', index[i] + j - 1, '" type="number" class="form-control" value="', correspondingDefault()[index[i] + j - 1], '" min="1" max="', itemAlternatives()[index[i]], '"/>
                 </div>
               </td>
             </tr>')
@@ -314,7 +330,7 @@ shinyServer(function(input, output, session) {
               </td>
               <td style="vertical-align: middle">
                 <div class="form-group shiny-input-container">
-                  <input id="corresponding', index[i] + j - 1, '" type="number" class="form-control" value="', j, '" min="1" max="', itemAlternatives()[index[i]], '"/>
+                  <input id="corresponding', index[i] + j - 1, '" type="number" class="form-control" value="', correspondingDefault()[index[i] + j - 1], '" min="1" max="', itemAlternatives()[index[i]], '"/>
                 </div>
               </td>
             </tr>')
@@ -346,7 +362,7 @@ shinyServer(function(input, output, session) {
               </td>
               <td style="vertical-align: middle">
                 <div class="form-group shiny-input-container">
-                  <input id="corresponding', index[i] + j - 1, '" type="number" class="form-control" value="', j, '" min="1" max="', itemAlternatives()[index[i]], '"/>
+                  <input id="corresponding', index[i] + j - 1, '" type="number" class="form-control" value="', correspondingDefault()[index[i] + j - 1], '" min="1" max="', itemAlternatives()[index[i]], '"/>
                 </div>
               </td>
             </tr>')
@@ -411,15 +427,29 @@ shinyServer(function(input, output, session) {
         {
           if (!is.null(eval(parse(text = paste0('input$corresponding', index[i] + j - 1)))))
           {
-            temp <- c(temp, as.integer(index[i] + eval(parse(text = paste0('input$corresponding', index[i] + j - 1))) - 1))
+            temp <- c(temp, as.integer(eval(parse(text = paste0('input$corresponding', index[i] + j - 1)))))
           }
           else
           {
-            temp <- c(temp, as.integer(index[i] + j - 1))
+            temp <- c(temp, as.integer(j))
           }
         }
       }
       temp
+    }
+  })
+  
+  # OUTPUT: downlaod handler for configuration
+  observe ({
+    if (!is.null(corresponding()))
+    {
+      output$configuration <- downloadHandler (
+        filename = "Configuration.csv",
+        content = function(file)
+        {
+          write.csv(corresponding(), file, row.names = TRUE, fileEncoding="UTF-8")
+        }
+      )
     }
   })
   
@@ -474,7 +504,7 @@ shinyServer(function(input, output, session) {
       tempB <- data.frame(apply(tempB[-1], 2, function(x) colsplit(x, " ", 1:5)), row.names = tempB[ , 1])
       
       # sort B
-      tempB <- tempB[ , corresponding()]
+      tempB <- tempB[ , corresponding() + rep(seq(1, 5 * numberOfItems(), 5), each = 5) - 1]
       
       # rename and bind A/B
       colnames(tempA) <- 1:(numberOfItems() * 5)
