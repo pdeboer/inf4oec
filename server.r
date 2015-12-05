@@ -792,6 +792,48 @@ shinyServer(function(input, output, session) {
     }
   })
   
+  # observe action button to maximize difference between students with grades 3.75 and 4
+  observeEvent(input$goButton, {
+    if (!is.null(itemPoints()) && !is.null(scores()) && !is.null(input$minPass) && !is.null(input$maxPass) && !is.null(input$points46))
+    {
+      # get all input parameters
+      scores <- c(scores()[ , 1])
+      maxPointsLocal <- sum(itemPoints()) / 5
+      numberOfStudentsLocal <- length(scores)
+      percentMinPassed <- input$minPass
+      percentMaxPassed <- input$maxPass
+
+      # generate possible point combinations
+      combinations <- expand.grid(seq(1, maxPointsLocal, 0.25), seq(1, maxPointsLocal, 0.25))
+      combinations <- combinations[combinations$Var1 < combinations$Var2, ]
+
+      # calculate slopes and intercepts
+      combinations$slope <- calculateSlope(combinations[ , 1], 3.875, combinations[ , 2], 5.875)
+      combinations$intercept <- calculateIntercept(3.875, combinations$slope, combinations[ , 1])
+      
+      # calculate grades and clamp
+      possibleGrades <- apply(combinations, 1, function(x) round25(x[3] * scores + x[4]))
+      possibleGrades[possibleGrades > 6] <- 6
+      possibleGrades[possibleGrades < 1] <- 1
+      
+      # calculate possible percent passed
+      combinations$percentPassed <- apply(possibleGrades, 2, function(x) sum(x > 3.75) / numberOfStudentsLocal * 100)
+      
+      # calculate difference between failed with grade 3.75 and passed with grade 4
+      combinations$difference <- apply(possibleGrades, 2, function(x) abs(sum(x == 3.75) - sum(x == 4)))
+      
+      # exlude passed/failed out of user defined range
+      combinations <- combinations[combinations$percentPassed >= percentMinPassed & combinations$percentPassed <= percentMaxPassed, ]
+      
+      # get result with minimal points for grade 4
+      result <- combinations[combinations$difference == max(combinations$difference), 1:2]
+      result <- result[order(result[ , 1]), ]
+      
+      # update sliders according to result
+      updateSliderInput(session, "points46", value = c(result[1, 1], result[1, 2]))
+    }
+  })
+  
   # compute grades
   grades <- reactive ({
     if (!is.null(scores()) && !is.null(slope()) && !is.null(intercept()) && !is.null(emptyTests()))
