@@ -103,7 +103,7 @@ shinyServer(function(input, output, session) {
   emptyTests <- reactive ({
     if (!is.null(rawData()))
     {
-      temp <- dcast(rawData(), rawData()$liebmannnr ~ rawData()$Fragennummer, value.var = "Punkte")
+      temp <- dcast(rawData(), rawData()$Matrikelnummer ~ rawData()$Fragennummer, value.var = "Punkte")
       temp[rowSums(temp[-1]) == 0, 1]
     }
   })
@@ -112,7 +112,7 @@ shinyServer(function(input, output, session) {
   data <- reactive ({
     if (!is.null(rawData()) && !is.null(emptyTests()))
     {
-      rawData()[!rawData()$liebmannnr %in% emptyTests(), ]
+      rawData()[!rawData()$Matrikelnummer %in% emptyTests(), ]
     }
   })
   
@@ -457,7 +457,7 @@ shinyServer(function(input, output, session) {
   itemData <- reactive ({
     if (!is.null(data()))
     {
-      dcast(data(), data()$liebmannnr ~ data()$Fragennummer, value.var = "Punkte")[-1]
+      dcast(data(), data()$Matrikelnummer ~ data()$Fragennummer, value.var = "Punkte")[-1]
     }
   })
   
@@ -494,13 +494,13 @@ shinyServer(function(input, output, session) {
       # reshape A
       tempA <- dataA()
       tempA$Pattern <- paste(tempA$A, tempA$B, tempA$C, tempA$D, tempA$E)
-      tempA <- dcast(tempA, liebmannnr ~ Fragennummer, value.var = "Pattern")
+      tempA <- dcast(tempA, Matrikelnummer ~ Fragennummer, value.var = "Pattern")
       tempA <- data.frame(apply(tempA[-1], 2, function(x) colsplit(x, " ", 1:5)), row.names = tempA[ , 1])
       
       # reshape B
       tempB <- dataB()
       tempB$Pattern <- paste(tempB$A, tempB$B, tempB$C, tempB$D, tempB$E)
-      tempB <- dcast(tempB, liebmannnr ~ Fragennummer, value.var = "Pattern")
+      tempB <- dcast(tempB, Matrikelnummer ~ Fragennummer, value.var = "Pattern")
       tempB <- data.frame(apply(tempB[-1], 2, function(x) colsplit(x, " ", 1:5)), row.names = tempB[ , 1])
       
       # sort B
